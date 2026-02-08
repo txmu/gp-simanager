@@ -113,7 +113,7 @@ const ESimTools: React.FC = () => {
                          <span className="text-xs w-6 text-gray-500">#{i+1}</span>
                          <input 
                            type="range" 
-                           min="10" max="100" step="5" 
+                           min="5" max="200" step="5" 
                            value={p.size} 
                            onChange={(e) => {
                               const newProfiles = [...profiles];
