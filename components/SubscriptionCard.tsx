@@ -74,7 +74,9 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({ subscription, linke
   const threshold = subscription.notificationThreshold ?? 7;
   const gracePeriod = subscription.gracePeriod ?? 0;
   
-  const flag = getFlagFromPhoneNumber(subscription.phoneNumber, subscription.countryCode);
+  // 修正：优先使用保存的 override 标志，否则调用 helper 计算
+  const flag = subscription.regionFlagOverride || getFlagFromPhoneNumber(subscription.phoneNumber, subscription.countryCode);
+  
   const displayPhone = formatPhoneNumberDisplay(subscription.phoneNumber, isDemoMode);
   
   // Status Logic including Grace Period
