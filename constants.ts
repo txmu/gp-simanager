@@ -302,11 +302,10 @@ export const ALL_CURRENCIES = [
 ];
 
 export const ESIM_DEVICE_PRESETS = [
-    { name: "5ber Standard", eidPrefix: "", method: "App Writing (Android only)" },
-    { name: "5ber Premium", eidPrefix: "", method: "App Writing (Android only)" },
-    { name: "Estk.me Eco", eidPrefix: "", method: "Cloud Enhanced / Local" },
-    { name: "Estk.me Pro", eidPrefix: "", method: "Cloud Enhanced / Local" },
-    { name: "RedteaGo", eidPrefix: "89860", method: "App Writing" },
+    { name: "eSIM.gg Card / 9eSIM v0 (Max) / 蚊子玩卡S3", eidPrefix: "89086030", method: "Cloud Enhanced(9eSIM) / Local" },
+    { name: "ESTKme Light/Plus", eidPrefix: "89049032", method: "Cloud Enhanced / Local" },
+    { name: "9eSIM V2S / v3", eidPrefix: "89044045", method: "Cloud Enhanced / Local" },
+    { name: "ESTKme Max", eidPrefix: "89033023", method: "Cloud Enhanced / Local" },
     { name: "Pixel 7/8", eidPrefix: "890", method: "Native OS Menu" },
     { name: "iPhone 14/15", eidPrefix: "890", method: "Native OS Menu" }
 ];

@@ -1,15 +1,14 @@
-
 <!DOCTYPE html>
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>全球通套餐管家</title>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9291869795840562"
+     crossorigin="anonymous"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cloud.umami.is/script.js" data-website-id="0a3ec395-5346-4f0d-9144-631459149fb5"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="manifest" href="https://progressier.app/ymVXfR9hrpbFTjotyZpt/progressier.json"/><script defer src="https://progressier.app/ymVXfR9hrpbFTjotyZpt/script.js"></script> 
     <style>
       body {
         font-family: 'Inter', sans-serif;
@@ -97,72 +96,95 @@
       body.theme-geek .border-gray-200 { border-color: #30363d !important; }
       body.theme-geek .border-gray-100 { border-color: #21262d !important; }
       body.theme-geek header {
-        background-color: #161b22e6 !important; /* backdrop blur compatible */
+        background-color: #161b22e6 !important;
         border-bottom-color: #30363d !important;
       }
 
-      /* Simple SVG line animation */
       .path-anim {
         stroke-dasharray: 1000;
         stroke-dashoffset: 1000;
         animation: dash 2s linear forwards;
       }
-      @keyframes dash {
-        to {
-          stroke-dashoffset: 0;
-        }
-      }
+      @keyframes dash { to { stroke-dashoffset: 0; } }
       
-      /* 新增：震动动画 keyframes */
-  @keyframes shake {
-    10%, 90% { transform: translate3d(-1px, 0, 0); }
-    20%, 80% { transform: translate3d(2px, 0, 0); }
-    30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-    40%, 60% { transform: translate3d(4px, 0, 0); }
-  }
+      @keyframes shake {
+        10%, 90% { transform: translate3d(-1px, 0, 0); }
+        20%, 80% { transform: translate3d(2px, 0, 0); }
+        30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+        40%, 60% { transform: translate3d(4px, 0, 0); }
+      }
+      .animate-shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+      .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
 
-  /* 新增：震动动画类 */
-  .animate-shake {
-    animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
-    transform: translate3d(0, 0, 0);
-    backface-visibility: hidden;
-    perspective: 1000px;
-  }
-
-  /* 优化：配合 LockScreen 的淡入效果 */
-  .animate-fade-in {
-    animation: fadeIn 0.3s ease-out forwards;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
+      /* 自定义滚动条 */
+      .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+      .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+      body.theme-geek .custom-scrollbar::-webkit-scrollbar-thumb { background: #30363d; }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "react/": "https://esm.sh/react@^19.2.4/",
-    "react": "https://esm.sh/react@^19.2.4",
-    "qrcode": "https://esm.sh/qrcode@1.5.3"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
-</head>
+
+    <script type="importmap">
+    {
+      "imports": {
+        "lucide-react": "https://esm.sh/lucide-react@0.563.0",
+        "react-dom/": "https://esm.sh/react-dom@19.2.4/",
+        "react/": "https://esm.sh/react@19.2.4/",
+        "react": "https://esm.sh/react@19.2.4",
+        "qrcode": "https://esm.sh/qrcode@1.5.3"
+      }
+    }
+    </script>
+    <link rel="stylesheet" href="/index.css">
+  </head>
   <body>
     <div id="root"></div>
-  <script type="module" src="/index.tsx"></script>
+    <script type="module" src="/index.tsx"></script>
 
-    <!-- 注册 Service Worker -->
+    <!-- Service Worker 注册与自动更新逻辑 -->
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js');
+          navigator.serviceWorker.register('/sw.js').then((registration) => {
+            console.log('SW 注册成功，作用域为:', registration.scope);
+
+            // 每当页面加载时主动检查 sw.js 文件是否有更新
+            registration.update();
+
+            // 监听发现新版本 Service Worker 的事件
+            registration.onupdatefound = () => {
+              const installingWorker = registration.installing;
+              if (installingWorker == null) return;
+
+              installingWorker.onstatechange = () => {
+                if (installingWorker.state === 'installed') {
+                  if (navigator.serviceWorker.controller) {
+                    // 此时已经有旧的 SW 在控制页面，且新的 SW 已安装完毕
+                    // 触发刷新以应用新版本
+                    console.log('检测到新版本代码，正在自动刷新更新...');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 800);
+                  }
+                }
+              };
+            };
+          }).catch((error) => {
+            console.error('Service Worker 注册失败:', error);
+          });
+        });
+
+        // 核心更新逻辑：当新的 Service Worker 激活并接管页面时，强制刷新
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (refreshing) return;
+          refreshing = true;
+          window.location.reload();
         });
       }
     </script>
-</body>
+  </body>
 </html>

@@ -1,5 +1,3 @@
-
-
 import { PHONE_PREFIX_TO_FLAG } from '../constants';
 import { Subscription, Transaction } from '../types';
 
@@ -7,7 +5,6 @@ export const shareUtils = {
   // 编码：处理 Unicode -> Base64
   encodeData: (data: any) => {
     const jsonStr = JSON.stringify(data);
-    // 使用 encodeURIComponent 处理中文，再通过 btoa 转换
     return btoa(encodeURIComponent(jsonStr));
   },
   // 解码：处理 Base64 -> Unicode
@@ -23,7 +20,6 @@ export const shareUtils = {
 };
 
 export const webAuthnHelper = {
-  // 检查浏览器是否支持生物识别
   isSupported: async () => {
     return (
       window.PublicKeyCredential &&
@@ -32,7 +28,6 @@ export const webAuthnHelper = {
     );
   },
 
-  // 注册生物识别
   register: async (username: string) => {
     const challenge = crypto.getRandomValues(new Uint8Array(32));
     const userId = crypto.getRandomValues(new Uint8Array(16));
@@ -58,11 +53,9 @@ export const webAuthnHelper = {
       publicKey: publicKeyCredentialCreationOptions,
     })) as PublicKeyCredential;
 
-    // 返回 Base64 编码的 ID 供存储
     return btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
   },
 
-  // 验证生物识别
   authenticate: async (credentialIdBase64: string) => {
     const challenge = crypto.getRandomValues(new Uint8Array(32));
     const rawId = Uint8Array.from(atob(credentialIdBase64), (c) => c.charCodeAt(0));
@@ -81,7 +74,7 @@ export const webAuthnHelper = {
       publicKey: publicKeyCredentialRequestOptions,
     });
     
-    return true; // 如果没有抛出错误，则验证通过
+    return true; 
   },
 };
 
@@ -99,7 +92,6 @@ export const ITU_ZONES: Record<number, string> = {
 
 export const getITUZone = (countryCode?: string): number | null => {
   if (!countryCode) return null;
-  // Handle case where user input might include spaces or dashes, or starts with +
   const clean = countryCode.replace(/^\+/, '').trim();
   if (!clean) return null;
   
@@ -110,19 +102,26 @@ export const getITUZone = (countryCode?: string): number | null => {
   return null;
 };
 
+/**
+ * 核心修复：国旗识别逻辑
+ * 优先级 1: 优先使用 countryCode 框的值（精准定义资产归属）
+ * 优先级 2: 如果 countryCode 为空，则尝试从 phoneNumber 提取
+ */
 export const getFlagFromPhoneNumber = (phoneNumber?: string, countryCode?: string): string => {
-  // 第一优先级：区号框 (精准定义资产归属)
+  // 1. 优先根据独立的“区号/国家码”框匹配国旗
   if (countryCode) {
     const cleanCode = countryCode.startsWith('+') ? countryCode : `+${countryCode}`;
+    // 处理一些特殊的长区号匹配（如+3906698）
     if (PHONE_PREFIX_TO_FLAG[cleanCode]) {
       return PHONE_PREFIX_TO_FLAG[cleanCode];
     }
   }
-
-  // 第二优先级：手机号框 (作为补充识别)
+  
+  // 2. 兜底逻辑：从手机号前缀匹配（用于兼容未填写区号的旧数据）
   if (phoneNumber) {
     const cleanNumber = phoneNumber.replace(/[\s-]/g, '');
     const sortedPrefixes = Object.keys(PHONE_PREFIX_TO_FLAG).sort((a, b) => b.length - a.length);
+
     for (const prefix of sortedPrefixes) {
       if (cleanNumber.startsWith(prefix)) {
         return PHONE_PREFIX_TO_FLAG[prefix];
@@ -130,11 +129,10 @@ export const getFlagFromPhoneNumber = (phoneNumber?: string, countryCode?: strin
     }
   }
 
-  return '🌐';  // Unknown
+  return '🌐'; // 无法识别时显示地球
 };
 
-// Formats +86138... to "+86 138..."
-// If isDemoMode is true, masks the number: "+86 ****"
+// 格式化显示手机号
 export const formatPhoneNumberDisplay = (phoneNumber?: string, isDemoMode: boolean = false): string => {
   if (!phoneNumber) return '纯流量 / 无号码';
   
@@ -151,11 +149,11 @@ export const formatPhoneNumberDisplay = (phoneNumber?: string, isDemoMode: boole
     }
   }
   
-  // If no prefix matched
   if (isDemoMode) return '****';
   return phoneNumber;
 };
 
+// 核心日期算法：计算下次续费/到期日
 export const calculateNextRenewal = (
   startDateStr: string, 
   cycleDays: number, 
@@ -167,19 +165,17 @@ export const calculateNextRenewal = (
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // 这里的 baseDate 是计算的起点
+  // 计算起点：最后活跃日优先级高于开通日
   let nextDate = new Date(lastActiveDateStr || startDateStr);
   nextDate.setHours(0, 0, 0, 0);
 
-  // 如果是活跃延期或手动打卡，先加一个周期
+  // 初次推进一个周期
   if (lastActiveDateStr || cycleType === 'activity_based') {
      nextDate = getNextCycleDate(nextDate, cycleDays, cycleType);
   }
 
-  // 重要：如果加完一个周期还是在今天之前（比如欠费很久了），
-  // 则继续累加直到未来的某个续费日
+  // 自动追赶：如果日期已过，不断累加直到未来的第一个日期
   if (cycleType !== 'permanent') {
-    // 防止死循环
     const safeDays = cycleDays <= 0 ? 30 : cycleDays; 
     let limit = 0;
     while (nextDate.getTime() <= today.getTime() && limit < 120) {
@@ -191,14 +187,14 @@ export const calculateNextRenewal = (
   return nextDate;
 };
 
-export const getNextCycleDate = (current: Date, days: number, type: string): Date => {
+// 内部日期步进工具
+export const getNextCycleDate = (current: Date, days: number, type: string = 'daily'): Date => {
   const next = new Date(current);
   if (type === 'monthly') {
     next.setMonth(next.getMonth() + 1);
   } else if (type === 'annual') {
     next.setFullYear(next.getFullYear() + 1);
   } else {
-    // Default or Daily
     next.setDate(next.getDate() + (days || 30));
   }
   return next;
@@ -219,12 +215,12 @@ export const getDaysRemaining = (renewalDate: Date): number => {
 
 export const calculateProjectedCost = (cost: number, cycleDays: number, daysToProject: number): number => {
   if (cycleDays <= 0) return 0;
-  // Cost per day * projection days
   return (cost / cycleDays) * daysToProject;
 };
 
+// 导出 ICS 日历
 export const generateICS = (nickname: string, phoneNumber: string, renewalDate: Date, cost: number, currency: string) => {
-  const dateStr = renewalDate.toISOString().replace(/-|:|\.\d\d\d/g, "").slice(0, 8); // YYYYMMDD
+  const dateStr = renewalDate.toISOString().replace(/-|:|\.\d\d\d/g, "").slice(0, 8); 
   
   const icsContent = [
     'BEGIN:VCALENDAR',
@@ -262,7 +258,7 @@ export const generateBatchICS = (subscriptions: Subscription[]) => {
   }
 
   const events = subscriptions.filter(s => !s.isArchived).map(sub => {
-    const renewalDate = calculateNextRenewal(sub.startDate, sub.cycleDays);
+    const renewalDate = calculateNextRenewal(sub.startDate, sub.cycleDays, sub.cycleType || 'daily', sub.lastActiveDate);
     const dateStr = renewalDate.toISOString().replace(/-|:|\.\d\d\d/g, "").slice(0, 8);
     const phone = sub.phoneNumber || 'Data/Sim';
     
@@ -301,9 +297,7 @@ export const generateBatchICS = (subscriptions: Subscription[]) => {
   document.body.removeChild(link);
 };
 
-// --- v4 Helpers ---
-
-// WebDAV Client (Basic Auth)
+// WebDAV Client
 export const webdavClient = {
     async put(url: string, username: string, pass: string, data: string) {
         const headers = new Headers();
@@ -335,7 +329,6 @@ export const webdavClient = {
 };
 
 export const securityHelper = {
-  // Hash PIN using SHA-256
   async hashPin(pin: string): Promise<string> {
     const encoder = new TextEncoder();
     const data = encoder.encode(pin);
@@ -345,10 +338,6 @@ export const securityHelper = {
   }
 };
 
-
-// Simple Crypto for E2EE (Using Web Crypto API)
-// For simplicity in this demo, we use a basic key derivation and AES-GCM
-// In production, use a library like 'crypto-js' or robust WebCrypto implementation
 export const cryptoHelper = {
     async encrypt(text: string, password: string): Promise<string> {
         const enc = new TextEncoder();
@@ -368,7 +357,6 @@ export const cryptoHelper = {
             { name: "AES-GCM", iv }, key, enc.encode(text)
         );
         
-        // Pack: salt + iv + ciphertext
         const buffer = new Uint8Array(salt.byteLength + iv.byteLength + encrypted.byteLength);
         buffer.set(salt, 0);
         buffer.set(iv, salt.byteLength);
@@ -406,25 +394,19 @@ export const cryptoHelper = {
 
 export const convertCurrency = (amount: number, from: string, to: string, rates: Record<string, number>): number => {
     if (from === to) return amount;
-    // Base is 1.0. All rates are relative to base.
-    // Amount in Base = Amount / Rate(From)
-    // Amount in To = Amount in Base * Rate(To)
-    const rateFrom = rates[from] || 1; // Default to 1 if missing (bad)
+    const rateFrom = rates[from] || 1; 
     const rateTo = rates[to] || 1;
-    
     return (amount / rateFrom) * rateTo;
 };
 
-// LPA:1$SM-DP+$ActivationCode
 export const generateLPAString = (smdp: string, activationCode: string): string => {
    return `LPA:1$${smdp}$${activationCode}`;
 };
 
-// --- CSV ---
 export const generateCSV = (subscriptions: Subscription[]) => {
   const headers = ['昵称', '号码', '运营商', '类型', '费用', 'PIN', 'PUK', '货币', '到期日', '备注'];
   const rows = subscriptions.map(sub => {
-    const renewal = calculateNextRenewal(sub.startDate, sub.cycleDays, sub.cycleType);
+    const renewal = calculateNextRenewal(sub.startDate, sub.cycleDays, sub.cycleType || 'daily', sub.lastActiveDate);
     return [
       `"${sub.nickname}"`,
       `"${sub.phoneNumber || ''}"`,
@@ -439,7 +421,7 @@ export const generateCSV = (subscriptions: Subscription[]) => {
     ].join(',');
   });
   
-  const csvContent = "\uFEFF" + [headers.join(','), ...rows].join('\n'); // Add BOM for Excel
+  const csvContent = "\uFEFF" + [headers.join(','), ...rows].join('\n'); 
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -449,8 +431,6 @@ export const generateCSV = (subscriptions: Subscription[]) => {
   link.click();
   document.body.removeChild(link);
 };
-
-// --- Live Exchange Rates ---
 
 export const fetchExchangeRates = async (apiKey: string, base: string): Promise<Record<string, number> | null> => {
   try {
