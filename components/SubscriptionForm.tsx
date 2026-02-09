@@ -143,7 +143,9 @@ const [simPuk, setSimPuk] = useState(initialData?.simPuk || '');
     })) || []
   );
 
-  const ambiguousOptions = AMBIGUOUS_REGIONS[countryCode] || null;
+  // 自动为没有 + 号的输入补全，并去掉空格
+  const cleanCC = countryCode.trim().startsWith('+') ? countryCode.trim() : `+${countryCode.trim()}`;
+  const ambiguousOptions = AMBIGUOUS_REGIONS[cleanCC] || null;
 
   useEffect(() => {
     if (selectedChipId) {
@@ -386,8 +388,9 @@ const [simPuk, setSimPuk] = useState(initialData?.simPuk || '');
 
     const newSub: Subscription = {
       id: initialData?.id || crypto.randomUUID(),
-      nickname, operatorType, phoneNumber, numberType, countryCode, regionFlagOverride, adminDivision, virtualNumbers, tags,
+      nickname, operatorType, phoneNumber, numberType, countryCode, adminDivision, virtualNumbers, tags,
       cycleType,
+      regionFlagOverride: regionFlagOverride || displayedFlag, 
       simType, physicalCardName: simType === 'physical' ? physicalCardName : undefined,
       startDate, cycleDays: Number(cycleDays), cost: Number(cost), currency, 
       lastActiveDate: cycleType === 'activity_based' ? (lastActiveDate || startDate) : undefined,
