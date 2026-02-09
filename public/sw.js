@@ -1,3 +1,5 @@
+importScripts("https://progressier.app/ymVXfR9hrpbFTjotyZpt/sw.js" );
+
 const CACHE_NAME = 'sim-manager-v3';
 
 // 只有这些基础资源在安装时缓存
