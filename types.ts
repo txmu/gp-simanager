@@ -175,6 +175,7 @@ export interface Subscription {
   nickname: string;
   phoneNumber?: string; 
   countryCode?: string; 
+  regionFlagOverride?: string; // 新增：专门存储用户手动选定的国旗（解决+1/7歧义）
   adminDivision?: string; // New: First-level Administrative Division (State/Province)
   
   operatorType?: OperatorType;

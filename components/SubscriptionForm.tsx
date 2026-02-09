@@ -386,7 +386,7 @@ const [simPuk, setSimPuk] = useState(initialData?.simPuk || '');
 
     const newSub: Subscription = {
       id: initialData?.id || crypto.randomUUID(),
-      nickname, operatorType, phoneNumber, numberType, countryCode, adminDivision, virtualNumbers, tags,
+      nickname, operatorType, phoneNumber, numberType, countryCode, regionFlagOverride, adminDivision, virtualNumbers, tags,
       cycleType,
       simType, physicalCardName: simType === 'physical' ? physicalCardName : undefined,
       startDate, cycleDays: Number(cycleDays), cost: Number(cost), currency, 

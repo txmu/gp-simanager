@@ -102,26 +102,26 @@ export const getITUZone = (countryCode?: string): number | null => {
   return null;
 };
 
-/**
- * 核心修复：国旗识别逻辑
- * 优先级 1: 优先使用 countryCode 框的值（精准定义资产归属）
- * 优先级 2: 如果 countryCode 为空，则尝试从 phoneNumber 提取
- */
-export const getFlagFromPhoneNumber = (phoneNumber?: string, countryCode?: string): string => {
-  // 1. 优先根据独立的“区号/国家码”框匹配国旗
+export const getFlagFromPhoneNumber = (
+  phoneNumber?: string, 
+  countryCode?: string, 
+  regionFlagOverride?: string // 增加第三参数
+): string => {
+  // 优先级 1: 如果用户在表单里通过弹出框手动选过（如+1选了巴哈马），直接用
+  if (regionFlagOverride) return regionFlagOverride;
+
+  // 优先级 2: 根据独立的“区号/国家码”框匹配
   if (countryCode) {
     const cleanCode = countryCode.startsWith('+') ? countryCode : `+${countryCode}`;
-    // 处理一些特殊的长区号匹配（如+3906698）
     if (PHONE_PREFIX_TO_FLAG[cleanCode]) {
       return PHONE_PREFIX_TO_FLAG[cleanCode];
     }
   }
   
-  // 2. 兜底逻辑：从手机号前缀匹配（用于兼容未填写区号的旧数据）
+  // 优先级 3: 从手机号前缀匹配（兜底）
   if (phoneNumber) {
     const cleanNumber = phoneNumber.replace(/[\s-]/g, '');
     const sortedPrefixes = Object.keys(PHONE_PREFIX_TO_FLAG).sort((a, b) => b.length - a.length);
-
     for (const prefix of sortedPrefixes) {
       if (cleanNumber.startsWith(prefix)) {
         return PHONE_PREFIX_TO_FLAG[prefix];
@@ -129,7 +129,7 @@ export const getFlagFromPhoneNumber = (phoneNumber?: string, countryCode?: strin
     }
   }
 
-  return '🌐'; // 无法识别时显示地球
+  return '🌐'; 
 };
 
 // 格式化显示手机号

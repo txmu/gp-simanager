@@ -3,7 +3,7 @@
  * VERSION: v4.1
  */
 
-const VERSION = 'v4.1';
+const VERSION = 'v4.2';
 const CACHE_NAME = `sim-manager-cache-${VERSION}`;
 
 // 核心静态资源缓存列表
