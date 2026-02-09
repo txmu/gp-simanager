@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Globe, Shield, CreditCard, Signal, Smartphone, Cpu, IdCard, Hash, MapPin, Wifi, Archive, ArrowRightLeft, Landmark, UserCheck, StickyNote, Gauge, Info, Wallet, RotateCw, Receipt, Link as LinkIcon, ScanText } from 'lucide-react';
 import { Subscription, Scenario, KycType, PaymentMethod, DataUsage, ESimInfo, ScenarioMode, ESimChip, OperatorType, NumberType, VirtualNumber, RoamingPrerequisite, DebitCreditCard, BankAccountDetails, SpeedUnit, Transaction } from '../types';
@@ -733,7 +732,7 @@ const [simPuk, setSimPuk] = useState(initialData?.simPuk || '');
                     <input type="text" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg outline-none" placeholder="+86138..." />
                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-lg">{displayedFlag}</div>
                   </div>
-                  <input type="text" value={countryCode} onChange={(e) => { setCountryCode(e.target.value); }} className="w-20 px-3 py-2 border border-gray-300 rounded-lg outline-none" placeholder="+86" title="输入区号 (+1, +7, +39等)" />
+                  <input type="text" value={countryCode} onChange={(e) => { setCountryCode(e.target.value); setRegionFlagOverride(''); }} className="w-20 px-3 py-2 border border-gray-300 rounded-lg outline-none" placeholder="+86" title="输入区号 (+1, +7, +39等)" />
                   <select value={numberType} onChange={(e) => setNumberType(e.target.value as NumberType)} className="w-28 px-2 py-2 border border-gray-300 rounded-lg outline-none bg-white text-sm">
                     {NUMBER_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                   </select>
