@@ -93,7 +93,7 @@ const ESimTools: React.FC = () => {
              <div className="space-y-4 px-1">
                 <div className="bg-amber-50 p-3 rounded-lg border border-amber-100 text-xs text-amber-800 flex gap-2">
                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                   <p>估算 5ber / Estk / RedteaGo 等可写卡还能存多少 Profile。</p>
+                   <p>估算 9esim / ESTK / esim.gg实体卡 等可写卡还能存多少 Profile。</p>
                 </div>
                 
                 <div className="flex items-center gap-2">
