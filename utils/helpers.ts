@@ -111,21 +111,7 @@ export const getITUZone = (countryCode?: string): number | null => {
 };
 
 export const getFlagFromPhoneNumber = (phoneNumber?: string, countryCode?: string): string => {
-  if (phoneNumber) {
-    // Sort keys by length descending to match longest prefix first
-    const sortedPrefixes = Object.keys(PHONE_PREFIX_TO_FLAG).sort((a, b) => b.length - a.length);
-    
-    // Clean the number (remove spaces, dashes)
-    const cleanNumber = phoneNumber.replace(/[\s-]/g, '');
-
-    for (const prefix of sortedPrefixes) {
-      if (cleanNumber.startsWith(prefix)) {
-        return PHONE_PREFIX_TO_FLAG[prefix];
-      }
-    }
-  }
-  
-  // Fallback to manual country code if phone matches nothing or is empty
+  // 第一优先级：区号框 (精准定义资产归属)
   if (countryCode) {
     const cleanCode = countryCode.startsWith('+') ? countryCode : `+${countryCode}`;
     if (PHONE_PREFIX_TO_FLAG[cleanCode]) {
@@ -133,7 +119,18 @@ export const getFlagFromPhoneNumber = (phoneNumber?: string, countryCode?: strin
     }
   }
 
-  return '🌐'; // Unknown
+  // 第二优先级：手机号框 (作为补充识别)
+  if (phoneNumber) {
+    const cleanNumber = phoneNumber.replace(/[\s-]/g, '');
+    const sortedPrefixes = Object.keys(PHONE_PREFIX_TO_FLAG).sort((a, b) => b.length - a.length);
+    for (const prefix of sortedPrefixes) {
+      if (cleanNumber.startsWith(prefix)) {
+        return PHONE_PREFIX_TO_FLAG[prefix];
+      }
+    }
+  }
+
+  return '🌐';  // Unknown
 };
 
 // Formats +86138... to "+86 138..."
@@ -194,7 +191,7 @@ export const calculateNextRenewal = (
   return nextDate;
 };
 
-const getNextCycleDate = (current: Date, days: number, type: string): Date => {
+export const getNextCycleDate = (current: Date, days: number, type: string): Date => {
   const next = new Date(current);
   if (type === 'monthly') {
     next.setMonth(next.getMonth() + 1);

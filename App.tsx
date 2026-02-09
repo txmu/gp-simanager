@@ -780,7 +780,7 @@ const App: React.FC = () => {
       )}
 
       {isBatchEditOpen && <BatchEditModal selectedCount={selectedIds.size} onSave={(u) => { setSubscriptions(prev => prev.map(s => selectedIds.has(s.id) ? {...s, ...u} : s)); setIsBatchEditOpen(false); setSelectedIds(new Set()); }} onClose={() => setIsBatchEditOpen(false)} />}
-      {isCalculatorOpen && <CostCalculator subscriptions={subscriptions} onClose={() => setIsCalculatorOpen(false)} />}
+      {isCalculatorOpen && <CostCalculator subscriptions={subscriptions} currencySettings={currencySettings} onClose={() => setIsCalculatorOpen(false)} />}
     </div>
   );
 };
