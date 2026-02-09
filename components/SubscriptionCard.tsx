@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Trash2, Share2, RefreshCw, Calendar, Phone, Edit2, ChevronDown, ChevronUp, Wifi, CreditCard, Cpu, Signal, Globe, Archive, ArchiveRestore, IdCard, Hash, MapPin, Landmark, UserCheck, ArrowRightLeft, Download, TrendingUp, StickyNote, Gauge, Wallet, RotateCw, AlertTriangle, Zap } from 'lucide-react';
 import { Subscription, Scenario, ESimChip } from '../types';
@@ -36,39 +35,39 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({ subscription, linke
   };
   
   const handleShare = async (e: React.MouseEvent) => {
-  e.stopPropagation();
-  
-  // 确何一些字段【不被包含】
-  const shareData = {
-    nickname: subscription.nickname,
-    operatorType: subscription.operatorType,
-    cost: subscription.cost,
-    currency: subscription.currency,
-    cycleDays: subscription.cycleDays,
-    cycleType: subscription.cycleType,
-    keepAliveNote: subscription.keepAliveNote,
-    // simPin, simPuk, phoneNumber, eSim 等隐私内容自动被排除
+    e.stopPropagation();
+    
+    // 确保一些字段【不被包含】
+    const shareData = {
+      nickname: subscription.nickname,
+      operatorType: subscription.operatorType,
+      cost: subscription.cost,
+      currency: subscription.currency,
+      cycleDays: subscription.cycleDays,
+      cycleType: subscription.cycleType,
+      keepAliveNote: subscription.keepAliveNote,
+      // simPin, simPuk, phoneNumber, eSim 等隐私内容自动被排除
+    };
+
+    const base64Data = shareUtils.encodeData(shareData); // 使用 shareUtils
+    const shareUrl = `${window.location.origin}${window.location.pathname}?import=${base64Data}`;
+
+    // 生成二维码
+    try {
+      const url = await QRCode.toDataURL(shareUrl, {
+        margin: 2,
+        width: 256,
+        color: {
+          dark: '#4f46e5', // 使用 App 的默认主题色（靛蓝色）
+          light: '#ffffff'
+        }
+      });
+      setQrUrl(url);
+      setShowQr(true);
+    } catch (err) {
+      console.error('QR生成失败', err);
+    }
   };
-
-  const base64Data = shareUtils.encodeData(shareData); // 使用刚才新建的 shareUtils
-  const shareUrl = `${window.location.origin}${window.location.pathname}?import=${base64Data}`;
-
-  // 生成二维码（内容为上面刚生成的URL）
-  try {
-    const url = await QRCode.toDataURL(shareUrl, {
-      margin: 2,
-      width: 256,
-      color: {
-        dark: '#4f46e5', // 使用 App 的默认主题色（靛蓝色）
-        light: '#ffffff'
-      }
-});
-    setQrUrl(url);
-    setShowQr(true);
-  } catch (err) {
-    console.error('QR生成失败', err);
-  }
-};
 
   const nextRenewal = calculateNextRenewal(subscription.startDate, subscription.cycleDays, subscription.cycleType, subscription.lastActiveDate);
   const daysRemaining = getDaysRemaining(nextRenewal);
@@ -144,24 +143,24 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({ subscription, linke
   return (
     <div className={`bg-white rounded-xl shadow-sm border transition-all relative group ${isSelected ? 'ring-2 ring-indigo-500 border-indigo-500' : 'border-gray-200 hover:shadow-md'} ${subscription.isArchived ? 'opacity-70 grayscale bg-gray-50' : ''}`}>
     {/* 二维码分享覆盖层 */}
-{showQr && (
-  <div 
-    className="absolute inset-0 bg-white/95 z-30 flex flex-col items-center justify-center p-6 animate-fade-in"
-    onClick={(e) => { e.stopPropagation(); setShowQr(false); }}
-  >
-    <div className="bg-white p-2 border-4 border-indigo-600 rounded-xl shadow-xl">
-       <img src={qrUrl} alt="Share QR" className="w-32 h-32" />
-    </div>
-    <p className="mt-4 text-xs font-bold text-gray-800">扫描导入此套餐模板</p>
-    <div className="mt-2 px-4 text-center">
-       <p className="text-[10px] text-amber-600 flex items-center justify-center gap-1 font-medium">
-          <AlertTriangle className="w-2.5 h-2.5" /> 请确保备注中不含个人敏感信息
-       </p>
-       <p className="text-[9px] text-gray-400 mt-1">隐私数据（号码、PIN/PUK、卡号）已自动剔除</p>
-    </div>
-    <p className="text-[10px] text-gray-400 mt-1">点击任意处关闭</p>
-  </div>
-)}
+    {showQr && (
+      <div 
+        className="absolute inset-0 bg-white/95 z-30 flex flex-col items-center justify-center p-6 animate-fade-in"
+        onClick={(e) => { e.stopPropagation(); setShowQr(false); }}
+      >
+        <div className="bg-white p-2 border-4 border-indigo-600 rounded-xl shadow-xl">
+           <img src={qrUrl} alt="Share QR" className="w-32 h-32" />
+        </div>
+        <p className="mt-4 text-xs font-bold text-gray-800">扫描导入此套餐模板</p>
+        <div className="mt-2 px-4 text-center">
+           <p className="text-[10px] text-amber-600 flex items-center justify-center gap-1 font-medium">
+              <AlertTriangle className="w-2.5 h-2.5" /> 请确保备注中不含个人敏感信息
+           </p>
+           <p className="text-[9px] text-gray-400 mt-1">隐私数据（号码、PIN/PUK、卡号）已自动剔除</p>
+        </div>
+        <p className="text-[10px] text-gray-400 mt-1">点击任意处关闭</p>
+      </div>
+    )}
       <div 
         className="absolute top-4 left-4 z-10 cursor-pointer"
         onClick={() => onSelect(subscription.id)}
@@ -389,34 +388,62 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({ subscription, linke
               )}
               
               {(subscription.simPin || subscription.simPuk) && (
-  <div className="mt-2 flex gap-3">
-    {subscription.simPin && (
-      <div className="bg-gray-50 px-2 py-1 rounded border border-gray-100">
-        <span className="text-[9px] text-gray-400 block uppercase font-bold">PIN</span>
-        <span className="font-mono text-xs font-bold text-gray-700">
-          {isDemoMode ? '****' : subscription.simPin}
-        </span>
-      </div>
-    )}
-    {subscription.simPuk && (
-      <div className="bg-gray-50 px-2 py-1 rounded border border-gray-100">
-        <span className="text-[9px] text-gray-400 block uppercase font-bold">PUK</span>
-        <span className="font-mono text-xs font-bold text-gray-700">
-          {isDemoMode ? '********' : subscription.simPuk}
-        </span>
-      </div>
-    )}
-  </div>
-)}
+                <div className="mt-2 flex gap-3">
+                  {subscription.simPin && (
+                    <div className="bg-gray-50 px-2 py-1 rounded border border-gray-100">
+                      <span className="text-[9px] text-gray-400 block uppercase font-bold">PIN</span>
+                      <span className="font-mono text-xs font-bold text-gray-700">
+                        {isDemoMode ? '****' : subscription.simPin}
+                      </span>
+                    </div>
+                  )}
+                  {subscription.simPuk && (
+                    <div className="bg-gray-50 px-2 py-1 rounded border border-gray-100">
+                      <span className="text-[9px] text-gray-400 block uppercase font-bold">PUK</span>
+                      <span className="font-mono text-xs font-bold text-gray-700">
+                        {isDemoMode ? '********' : subscription.simPuk}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
            
               {(subscription.scenarios?.length ?? 0) > 0 && (
                 <div>
                    <strong className="block text-gray-800 mb-1">场景:</strong>
-                   <div className="flex flex-wrap gap-1">
+                   <div className="flex flex-col gap-2">
                       {subscription.scenarios?.map(s => (
-                        <span key={s.id} className="bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-100 flex items-center gap-1">
-                          {getFlagFromPhoneNumber(undefined, s.regionCode)} {s.note}
-                        </span>
+                        <div key={s.id} className="flex flex-col gap-1 items-start">
+                            <span className="bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-100 flex items-center gap-1">
+                              {getFlagFromPhoneNumber(undefined, s.regionCode)} {s.note}
+                            </span>
+                            
+                            {/* 高级属性展示 */}
+                            <div className="flex gap-1 flex-wrap pl-1">
+                               {s.vowifi?.isActive && s.vowifi.vowifiE911Required && (
+                                  <span className="text-[9px] px-1 rounded bg-red-100 text-red-600 border border-red-200 font-bold" title="此 VoWiFi 需要配置 E911 地址才能开启">
+                                     E911 Required
+                                  </span>
+                               )}
+
+                               {(s.local?.isHotspotSupported || s.roaming?.isHotspotSupported) && (
+                                  <span className="text-[9px] px-1 rounded bg-gray-100 text-gray-600 border border-gray-200">
+                                     Hotspot OK
+                                  </span>
+                               )}
+
+                               {s.roaming?.isActive && s.roaming.roamLikeHome && (
+                                  <span className="text-[9px] px-1 rounded bg-indigo-100 text-indigo-600 border border-indigo-200">
+                                     RLAH
+                                  </span>
+                               )}
+                               {s.roaming?.isActive && s.roaming.roamingPrerequisite === 'package_required' && (
+                                  <span className="text-[9px] px-1 rounded bg-amber-100 text-amber-700 border border-amber-200">
+                                     需买包
+                                  </span>
+                               )}
+                            </div>
+                        </div>
                       ))}
                    </div>
                 </div>

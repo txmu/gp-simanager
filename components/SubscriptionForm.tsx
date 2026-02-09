@@ -440,6 +440,63 @@ const [simPuk, setSimPuk] = useState(initialData?.simPuk || '');
                      </label>
                   ))}
                </div>
+               {/* === 新增：高级功能区 (E911, 热点, RLAH) === */}
+<div className="mt-2 pt-2 border-t border-dashed border-gray-200 grid grid-cols-2 gap-2">
+  
+  {/* 通用：热点支持 (只要不是 VoWiFi) */}
+  {mode !== 'vowifi' && (
+    <label className="flex items-center gap-1 text-[10px] text-gray-600 cursor-pointer">
+      <input 
+        type="checkbox" 
+        checked={data.isHotspotSupported || false} 
+        onChange={(e) => updateScenarioMode(index, mode, { isHotspotSupported: e.target.checked })} 
+        className="rounded text-indigo-600 focus:ring-0"
+      />
+      支持热点 (Hotspot)
+    </label>
+  )}
+
+  {/* 漫游专属设置 */}
+  {mode === 'roaming' && (
+    <>
+      <label className="flex items-center gap-1 text-[10px] text-gray-600 cursor-pointer" title="Roam Like At Home (如欧盟区)">
+        <input 
+          type="checkbox" 
+          checked={data.roamLikeHome || false} 
+          onChange={(e) => updateScenarioMode(index, mode, { roamLikeHome: e.target.checked })} 
+          className="rounded text-indigo-600 focus:ring-0"
+        />
+        RLAH (像家一样)
+      </label>
+      
+      <div className="col-span-2 flex items-center gap-2">
+         <span className="text-[10px] text-gray-500">门槛:</span>
+         <select 
+            value={data.roamingPrerequisite || 'none'} 
+            onChange={(e) => updateScenarioMode(index, mode, { roamingPrerequisite: e.target.value as any })}
+            className="text-[10px] border rounded px-1 py-0.5 bg-white outline-none"
+         >
+            <option value="none">无门槛 (直接用)</option>
+            <option value="package_required">需买漫游包</option>
+            <option value="balance_threshold">需余额/PAYG</option>
+         </select>
+      </div>
+    </>
+  )}
+
+  {/* VoWiFi 专属设置：E911 */}
+  {mode === 'vowifi' && (
+    <label className="col-span-2 flex items-center gap-1 text-[10px] text-red-600 cursor-pointer bg-red-50 px-2 py-1 rounded">
+      <input 
+        type="checkbox" 
+        checked={data.vowifiE911Required || false} 
+        onChange={(e) => updateScenarioMode(index, mode, { vowifiE911Required: e.target.checked })} 
+        className="rounded text-red-600 focus:ring-0"
+      />
+      需挂载 E911 地址 (E911 Req.)
+    </label>
+  )}
+</div>
                <div className="mt-2 pt-2 border-t border-dashed border-gray-200">
                   <input
                     type="text"
