@@ -3,9 +3,9 @@ import {
   X, Check, Monitor, Flower, Snowflake, Terminal, Leaf, Palette, 
   Bell, Calendar, Zap, AlertTriangle, Download, Send, Globe, 
   Lock, Eye, EyeOff, Shield, ShieldCheck, RefreshCw, Key, 
-  Database, Coins, FileSpreadsheet, CloudLightning, Fingerprint, SmartphoneNfc, Terminal, Cpu, Plus, Info, Edit2
+  Database, Coins, FileSpreadsheet, CloudLightning, Fingerprint, SmartphoneNfc, Terminal
 } from 'lucide-react';
-import { ThemeType, NotificationSettings, SecuritySettings, SyncSettings, CurrencySettings, UserAPI, CustomTheme, SystemTask } from '../types';
+import { ThemeType, NotificationSettings, SecuritySettings, SyncSettings, CurrencySettings } from '../types';
 import { ALL_CURRENCIES } from '../constants';
 import { webdavClient, securityHelper, fetchExchangeRates, webAuthnHelper } from '../utils/helpers';
 
@@ -32,21 +32,13 @@ interface SettingsModalProps {
   logs: {time: string, msg: string}[]; 
   onLog: (msg: string) => void;        
   onClearLogs: () => void;             
-  isLocalHost: boolean;
-  forceDebug: boolean;              
-  onToggleDebug: (val: boolean) => void; 
-  systemTasks: any[];
-  userAPIs: any[];
-  onUpdateAPIs: React.Dispatch<React.SetStateAction<any[]>>;
-  customThemes: any[];
-  onUpdateThemes: React.Dispatch<React.SetStateAction<any[]>>;
 }
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ 
-    currentTitle, currentTheme, notificationSettings, isDemoMode, securitySettings, syncSettings, currencySettings, logs, isLocalHost, forceDebug, onToggleDebug, systemTasks, userAPIs, customThemes,
-    onUpdateAPIs, onUpdateThemes, onLog, onSave, onExportICS, onExportCSV, onClearLogs, onClose 
+    currentTitle, currentTheme, notificationSettings, isDemoMode, securitySettings, syncSettings, currencySettings, logs,
+    onLog, onSave, onExportICS, onExportCSV, onClearLogs, onClose 
 }) => {
-  const [activeTab, setActiveTab] = useState<'general' | 'sync' | 'security' | 'currency' | 'logs' | 'extensions'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'sync' | 'security' | 'currency' | 'logs'>('general');
 
   // --- 1. General Settings State ---
   const [title, setTitle] = useState(currentTitle);
@@ -190,89 +182,6 @@ const handleSetupBiometric = async () => {
     { id: 'matcha', name: '抹茶绿', color: 'bg-green-600', icon: Leaf, desc: 'Natural & Calm' },
     { id: 'geek', name: '极客黑', color: 'bg-gray-800', icon: Terminal, desc: 'Dark & Coding' },
   ];
-  const [editingTheme, setEditingTheme] = useState<CustomTheme | null>(null);
-
-// 保存主题修改
-const handleSaveThemeContent = () => {
-    if (!editingTheme) return;
-    onUpdateThemes(prev => prev.map(t => 
-        t.id === editingTheme.id ? editingTheme : t
-    ));
-    setEditingTheme(null);
-};
-
-// 新建自定义 API
-const handleAddAPI = () => {
-    const newAPI = {
-        id: crypto.randomUUID(),
-        name: "未命名自动化任务",
-        trigger: 'interval',
-        intervalSeconds: 60,
-        code: "// 在此编写代码\n// 使用 GSM.db.update(id, { ... }) 更新数据\nGSM.sys.log('定时任务正在运行...');",
-        enabled: true
-    };
-    onUpdateAPIs(prev => [...prev, newAPI]);
-};
-
-// 切换 API 状态 (开启/关闭)
-const handleToggleAPI = (id: string) => {
-    onUpdateAPIs(prev => prev.map(api => 
-        api.id === id ? { ...api, enabled: !api.enabled } : api
-    ));
-};
-
-// 删除 API
-const handleDeleteAPI = (id: string) => {
-    if(confirm("确定删除此 API 函数吗？")) {
-        onUpdateAPIs(prev => prev.filter(api => api.id !== id));
-    }
-};
-
-// 记录当前正在编辑的 API 对象（如果为 null 则显示列表，不为 null 则显示编辑器）
-const [editingApi, setEditingApi] = useState<any | null>(null);
-
-// 保存编辑后的 API
-const handleSaveApiContent = () => {
-    if (!editingApi) return;
-    onUpdateAPIs(prev => prev.map(api => 
-        api.id === editingApi.id ? editingApi : api
-    ));
-    setEditingApi(null); // 返回列表
-};
-
-// 新建自定义主题
-const handleAddTheme = () => {
-    // 1. 添加这行日志，用来测试按钮点击是否生效
-    console.log("🚀 新建主题按钮被点击了！当前主题数:", customThemes.length);
-
-    const id = "custom-" + Date.now();
-    const newTheme = {
-        id: id,
-        name: "新主题 " + (customThemes.length + 1),
-        colors: {
-            primary: "#6366f1",    // 默认靛蓝
-            background: "#ffffff", // 默认白
-            text: "#1f2937",       // 默认黑
-            panel: "#f9fafb"       // 默认浅灰
-        },
-        css: "/* 在此输入高级 CSS */"
-    };
-
-    // 2. 确保使用的是传进来的 onUpdateThemes
-    if (typeof onUpdateThemes === 'function') {
-        onUpdateThemes(prev => [...prev, newTheme]);
-        console.log("✅ 已发送更新指令给父组件");
-    } else {
-        console.error("❌ 报错：onUpdateThemes 不是一个合法的函数！");
-    }
-};
-
-// 删除主题
-const handleDeleteTheme = (id: string) => {
-    if(confirm("确定删除此主题吗？")) {
-        onUpdateThemes(prev => prev.filter(t => t.id !== id));
-    }
-};
 
   // --- Final Save Handler ---
   const handleSave = () => {
@@ -298,7 +207,7 @@ const handleDeleteTheme = (id: string) => {
 
         {/* Tabs */}
         <div className="flex border-b border-gray-200">
-           {['general', 'security', 'sync', 'currency', 'logs', 'extensions'].map(tab => (
+           {['general', 'security', 'sync', 'currency', 'logs'].map(tab => (
                <button 
                  key={tab}
                  onClick={() => setActiveTab(tab as any)} 
@@ -313,7 +222,6 @@ const handleDeleteTheme = (id: string) => {
  tab === 'sync' ? '同步' : 
  tab === 'currency' ? '汇率' : 
  tab === 'logs' ? '日志' : 
- tab === 'extensions' ? '扩展内核' : 
  ''}
                </button>
            ))}
@@ -383,311 +291,6 @@ const handleDeleteTheme = (id: string) => {
     </p>
   </div>
 )}
-
-{/* ================= EXTENSIONS TAB ================= */}
-{activeTab === 'extensions' && (
-  <div className="space-y-6 animate-fade-in">
-    
-    {/* 如果 editingApi 有值，显示编辑器；否则显示原有的监控和列表 */}
-    {editingApi ? (
-      <div className="flex flex-col gap-4 bg-gray-900 p-4 rounded-xl border border-gray-700 animate-fade-in">
-        <div className="flex justify-between items-center border-b border-gray-800 pb-2">
-            <h3 className="text-green-400 font-mono text-sm flex items-center gap-2">
-                <Terminal className="w-4 h-4"/> 正在编辑: {editingApi.name}
-            </h3>
-            <button onClick={() => setEditingApi(null)} className="text-gray-500 hover:text-white text-xs">取消</button>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-            <div>
-                <label className="text-[10px] text-gray-500 uppercase font-bold">函数名称</label>
-                <input 
-                    type="text" 
-                    value={editingApi.name} 
-                    onChange={e => setEditingApi({...editingApi, name: e.target.value})}
-                    className="w-full bg-gray-800 border-gray-700 text-white text-xs rounded p-2 outline-none focus:border-green-500"
-                />
-            </div>
-            <div>
-                <label className="text-[10px] text-gray-500 uppercase font-bold">执行间隔 (秒)</label>
-                <input 
-                    type="number" 
-                    value={editingApi.intervalSeconds} 
-                    onChange={e => setEditingApi({...editingApi, intervalSeconds: Number(e.target.value)})}
-                    className="w-full bg-gray-800 border-gray-700 text-white text-xs rounded p-2 outline-none focus:border-green-500"
-                />
-            </div>
-        </div>
-
-        <div>
-            <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">JavaScript 源码 (GSM 内核 API 可用)</label>
-            <textarea 
-                value={editingApi.code}
-                onChange={e => setEditingApi({...editingApi, code: e.target.value})}
-                spellCheck={false}
-                className="w-full h-64 bg-black border border-gray-800 text-green-500 font-mono text-[11px] p-3 rounded outline-none focus:ring-1 focus:ring-green-900 resize-none shadow-inner"
-            />
-        </div>
-
-        <div className="flex justify-end gap-3">
-            <button 
-                onClick={() => setEditingApi(null)}
-                className="px-4 py-2 text-xs text-gray-400 hover:text-white transition-colors"
-            >
-                丢弃更改
-            </button>
-            <button 
-                onClick={handleSaveApiContent}
-                className="px-6 py-2 bg-green-600 text-white text-xs font-bold rounded hover:bg-green-500 shadow-lg shadow-green-900/20"
-            >
-                保存并载入内存
-            </button>
-        </div>
-      </div>
-    ) : (
-      <>
-    {/* Debug Mode Controller */}
-    <div className="bg-gray-900 text-green-400 p-4 rounded-xl border border-gray-700 font-mono text-xs">
-        <div className="flex justify-between items-center mb-2">
-            <h3 className="font-bold text-sm flex items-center gap-2">
-                <Terminal className="w-4 h-4"/> ROOT / DEBUG 模式
-            </h3>
-            {/* 开关逻辑 */}
-            {isLocalHost ? (
-                <span className="bg-gray-800 text-gray-500 px-2 py-1 rounded border border-gray-600 cursor-not-allowed" title="本地部署强制开启">
-                    🔒 LOCKED ON (LOCAL)
-                </span>
-            ) : (
-                <label className="flex items-center gap-2 cursor-pointer">
-                    <span>{forceDebug ? 'ENABLED' : 'DISABLED'}</span>
-                    <input type="checkbox" checked={forceDebug} onChange={e => onToggleDebug(e.target.checked)} className="accent-green-500" />
-                </label>
-            )}
-        </div>
-        <div className="opacity-80 leading-relaxed">
-            <p>启用后，将暴露 window._x7b... 系列底层接口。</p>
-            <p className="mt-2 text-white font-bold border-t border-gray-700 pt-2">🐒 油猴脚本集成指南 (Tampermonkey):</p>
-            <p>在脚本头添加: <code className="bg-gray-800 px-1">@grant GM_xmlhttpRequest</code></p>
-            <p>数据读取: <code className="bg-gray-800 px-1">window.GSM.db.read()</code></p>
-            <p>数据写入: <code className="bg-gray-800 px-1">window.GSM.db.update(id, payload)</code></p>
-        </div>
-    </div>
-
-    {/* MMU Task Monitor */}
-    <div className="border border-gray-200 rounded-xl p-4">
-        <h3 className="font-bold text-gray-700 mb-3 flex items-center gap-2"><Cpu className="w-4 h-4"/> 任务管理器 (MMU)</h3>
-        <div className="bg-gray-50 rounded h-32 overflow-y-auto p-2 text-[10px] font-mono">
-            {systemTasks.length === 0 && <span className="text-gray-400">系统空闲 (System Idle)...</span>}
-            {systemTasks.map(t => (
-                <div key={t.pid} className="flex justify-between border-b border-gray-100 last:border-0 py-1">
-                    <span className="text-indigo-600">PID:{t.pid}</span>
-                    <span className="font-bold">{t.name}</span>
-                    <span className={t.status==='running'?'text-green-500':'text-gray-500'}>{t.status.toUpperCase()}</span>
-                    <span>{t.memoryUsage}B</span>
-                </div>
-            ))}
-        </div>
-    </div>
-    
-        {/* User APIs Editor 列表 */}
-        <div className="border border-gray-200 rounded-xl p-4 bg-white shadow-sm">
-            <div className="flex justify-between items-center mb-3">
-                <h3 className="font-bold text-gray-700">用户自定义 API</h3>
-                <button onClick={handleAddAPI} className="text-xs bg-indigo-50 text-indigo-600 px-2 py-1 rounded">+ 新建函数</button>
-            </div>
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-                {userAPIs.map(api => (
-                    <div key={api.id} className="flex items-center justify-between bg-gray-50 p-3 rounded border border-gray-100 hover:border-indigo-200 transition-all">
-                        <div className="flex items-center gap-3">
-                            <input 
-                                type="checkbox" 
-                                checked={api.enabled} 
-                                onChange={() => handleToggleAPI(api.id)} 
-                                className="w-4 h-4 accent-indigo-600"
-                            />
-                            <div className="flex flex-col">
-                                <span className="text-sm font-bold text-gray-800">{api.name}</span>
-                                <span className="text-[10px] text-gray-400 font-mono uppercase tracking-tighter">
-                                    Trigger: {api.trigger} | Every {api.intervalSeconds}s
-                                </span>
-                            </div>
-                        </div>
-                        <div className="flex gap-3">
-                            <button 
-                                onClick={() => setEditingApi(api)} // 核心：点击进入编辑模式
-                                className="text-xs text-indigo-600 font-bold hover:underline"
-                            >
-                                编辑代码
-                            </button>
-                            <button onClick={() => handleDeleteAPI(api.id)} className="text-xs text-red-400 hover:text-red-600">删除</button>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-
-{/* Custom Theme Editor - 主题工坊 */}
-<div className="border border-gray-200 rounded-xl p-4 bg-white shadow-sm">
-    <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center gap-2">
-            <Palette className="w-4 h-4 text-pink-500" />
-            <h3 className="font-bold text-gray-700">UI 主题工坊</h3>
-        </div>
-        {!editingTheme && (
-            <button 
-                onClick={handleAddTheme} 
-                className="text-xs bg-pink-50 text-pink-600 px-3 py-1.5 rounded-lg hover:bg-pink-100 transition-colors font-bold flex items-center gap-1"
-            >
-                <Plus className="w-3 h-3" /> 新建主题
-            </button>
-        )}
-    </div>
-
-    {/* 编辑器界面 - 当 editingTheme 不为 null 时显示 */}
-    {editingTheme ? (
-        <div className="space-y-4 bg-gray-50 p-4 rounded-xl border border-pink-100 animate-fade-in">
-            <div className="flex justify-between items-center border-b border-gray-200 pb-2 mb-2">
-                <div className="flex flex-col">
-                    <span className="text-[10px] text-gray-400 uppercase font-bold">正在设计主题</span>
-                    <input 
-                        className="font-bold bg-transparent text-gray-800 border-none p-0 focus:ring-0 text-lg outline-none"
-                        value={editingTheme.name}
-                        autoFocus
-                        onChange={e => setEditingTheme({...editingTheme, name: e.target.value})}
-                    />
-                </div>
-                <button 
-                    onClick={() => setEditingTheme(null)} 
-                    className="p-1 hover:bg-gray-200 rounded-full transition-colors"
-                >
-                    <X className="w-5 h-5 text-gray-400" />
-                </button>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white p-2 rounded-lg border border-gray-100 shadow-sm">
-                    <label className="text-[10px] font-black text-gray-400 uppercase block mb-1">主色调 / Primary</label>
-                    <div className="flex items-center gap-2">
-                        <input type="color" className="w-8 h-8 rounded border-none cursor-pointer" value={editingTheme.colors.primary} onChange={e => setEditingTheme({...editingTheme, colors: {...editingTheme.colors, primary: e.target.value}})} />
-                        <span className="text-xs font-mono text-gray-500 uppercase">{editingTheme.colors.primary}</span>
-                    </div>
-                </div>
-                <div className="bg-white p-2 rounded-lg border border-gray-100 shadow-sm">
-                    <label className="text-[10px] font-black text-gray-400 uppercase block mb-1">页面背景 / Bg</label>
-                    <div className="flex items-center gap-2">
-                        <input type="color" className="w-8 h-8 rounded border-none cursor-pointer" value={editingTheme.colors.background} onChange={e => setEditingTheme({...editingTheme, colors: {...editingTheme.colors, background: e.target.value}})} />
-                        <span className="text-xs font-mono text-gray-500 uppercase">{editingTheme.colors.background}</span>
-                    </div>
-                </div>
-                <div className="bg-white p-2 rounded-lg border border-gray-100 shadow-sm">
-                    <label className="text-[10px] font-black text-gray-400 uppercase block mb-1">文字颜色 / Text</label>
-                    <div className="flex items-center gap-2">
-                        <input type="color" className="w-8 h-8 rounded border-none cursor-pointer" value={editingTheme.colors.text} onChange={e => setEditingTheme({...editingTheme, colors: {...editingTheme.colors, text: e.target.value}})} />
-                        <span className="text-xs font-mono text-gray-500 uppercase">{editingTheme.colors.text}</span>
-                    </div>
-                </div>
-                <div className="bg-white p-2 rounded-lg border border-gray-100 shadow-sm">
-                    <label className="text-[10px] font-black text-gray-400 uppercase block mb-1">卡片面板 / Panel</label>
-                    <div className="flex items-center gap-2">
-                        <input type="color" className="w-8 h-8 rounded border-none cursor-pointer" value={editingTheme.colors.panel} onChange={e => setEditingTheme({...editingTheme, colors: {...editingTheme.colors, panel: e.target.value}})} />
-                        <span className="text-xs font-mono text-gray-500 uppercase">{editingTheme.colors.panel}</span>
-                    </div>
-                </div>
-            </div>
-
-            <div>
-                <label className="text-[10px] font-black text-gray-400 uppercase block mb-1 flex items-center gap-1">
-                    <Code className="w-3 h-3"/> 自定义 CSS 注入 (Expert Only)
-                </label>
-                <textarea 
-                    className="w-full h-32 p-3 font-mono text-[11px] bg-gray-900 text-pink-400 border-none rounded-lg outline-none focus:ring-2 focus:ring-pink-500/50 shadow-inner"
-                    value={editingTheme.css}
-                    placeholder="/* 示例：将卡片变为圆角 */ .bg-white { border-radius: 24px !important; }"
-                    onChange={e => setEditingTheme({...editingTheme, css: e.target.value})}
-                />
-            </div>
-
-            <div className="flex gap-2">
-                <button 
-                    onClick={() => setEditingTheme(null)} 
-                    className="flex-1 py-2 text-sm font-medium text-gray-500 hover:bg-gray-200 rounded-lg transition-colors"
-                >
-                    放弃
-                </button>
-                <button 
-                    onClick={handleSaveThemeContent} 
-                    className="flex-[2] py-2 bg-pink-600 text-white rounded-lg font-bold text-sm shadow-lg shadow-pink-200 hover:bg-pink-700 active:scale-95 transition-all"
-                >
-                    保存设计并应用
-                </button>
-            </div>
-        </div>
-    ) : (
-        /* 主题列表界面 */
-        <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto pr-1 custom-scrollbar">
-            {customThemes.length === 0 ? (
-                <div className="text-center py-10 bg-gray-50 rounded-lg border border-dashed border-gray-200">
-                    <Palette className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                    <p className="text-xs text-gray-400">尚未创建自定义主题</p>
-                </div>
-            ) : (
-                customThemes.map(t => (
-                    <div 
-                        key={t.id} 
-                        className={`flex items-center justify-between p-3 border rounded-xl transition-all group ${theme === t.id ? 'border-pink-500 bg-pink-50/30 ring-1 ring-pink-500' : 'bg-white border-gray-100 hover:border-pink-200 hover:shadow-sm'}`}
-                    >
-                        <div className="flex items-center gap-3">
-                            <div className="relative">
-                                <div className="w-8 h-8 rounded-lg border border-gray-200 shadow-inner" style={{backgroundColor: t.colors.background}}></div>
-                                <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-white shadow-sm" style={{backgroundColor: t.colors.primary}}></div>
-                            </div>
-                            <div className="flex flex-col">
-                                <span className="text-sm font-bold text-gray-700">{t.name}</span>
-                                <span className="text-[9px] text-gray-400 font-mono">ID: {t.id.slice(0,8)}</span>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            {/* 应用主题按钮 */}
-                            <button 
-                                onClick={() => setTheme(t.id as any)} 
-                                title="立即应用"
-                                className={`p-2 rounded-lg transition-all ${theme === t.id ? 'bg-pink-600 text-white' : 'bg-gray-100 text-gray-500 hover:bg-pink-100 hover:text-pink-600'}`}
-                            >
-                                <Check className="w-4 h-4" />
-                            </button>
-                            {/* 编辑按钮 */}
-                            <button 
-                                onClick={() => setEditingTheme(t)} 
-                                title="设计/修改"
-                                className="p-2 bg-gray-100 text-gray-500 hover:bg-indigo-100 hover:text-indigo-600 rounded-lg transition-all"
-                            >
-                                <Edit2 className="w-4 h-4" />
-                            </button>
-                            {/* 删除按钮 */}
-                            <button 
-                                onClick={() => handleDeleteTheme(t.id)} 
-                                title="删除"
-                                className="p-2 bg-gray-100 text-gray-500 hover:bg-red-100 hover:text-red-600 rounded-lg transition-all"
-                            >
-                                <Trash2 className="w-4 h-4" />
-                            </button>
-                        </div>
-                    </div>
-                ))
-            )}
-        </div>
-    )}
-    
-    <p className="mt-3 text-[10px] text-gray-400 flex items-center gap-1">
-        <Info className="w-3 h-3" /> 提示：自定义主题将覆盖全局 CSS 变量。使用 "设计" 修改颜色后需点击 "保存" 才会永久生效。
-    </p>
-</div> {/* 这里闭合的是 Custom Theme Editor 的最外层 div */}
-    
-    {/* --- 补全缺失的闭合标签 --- */}
-      </>
-    )} 
-  </div> 
-)} 
           
           {/* ================= GENERAL TAB ================= */}
           {activeTab === 'general' && (
