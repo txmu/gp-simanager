@@ -3,7 +3,7 @@ import {
   X, Check, Monitor, Flower, Snowflake, Terminal, Leaf, Palette, 
   Bell, Calendar, Zap, AlertTriangle, Download, Send, Globe, 
   Lock, Eye, EyeOff, Shield, ShieldCheck, RefreshCw, Key, 
-  Database, Coins, FileSpreadsheet, CloudLightning, Fingerprint, SmartphoneNfc, Terminal, Cpu, Plus
+  Database, Coins, FileSpreadsheet, CloudLightning, Fingerprint, SmartphoneNfc, Terminal, Cpu, Plus, Info
 } from 'lucide-react';
 import { ThemeType, NotificationSettings, SecuritySettings, SyncSettings, CurrencySettings, UserAPI, CustomTheme, SystemTask } from '../types';
 import { ALL_CURRENCIES } from '../constants';
