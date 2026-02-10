@@ -32,11 +32,17 @@ interface SettingsModalProps {
   logs: {time: string, msg: string}[]; 
   onLog: (msg: string) => void;        
   onClearLogs: () => void;             
+  isLocalHost: boolean;
+  systemTasks: any[];
+  userAPIs: any[];
+  onUpdateAPIs: React.Dispatch<React.SetStateAction<any[]>>;
+  customThemes: any[];
+  onUpdateThemes: React.Dispatch<React.SetStateAction<any[]>>;
 }
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ 
-    currentTitle, currentTheme, notificationSettings, isDemoMode, securitySettings, syncSettings, currencySettings, logs,
-    onLog, onSave, onExportICS, onExportCSV, onClearLogs, onClose 
+    currentTitle, currentTheme, notificationSettings, isDemoMode, securitySettings, syncSettings, currencySettings, logs, isLocalHost, systemTasks, userAPIs, customThemes,
+    onUpdateThemes, onLog, onSave, onExportICS, onExportCSV, onClearLogs, onClose 
 }) => {
   const [activeTab, setActiveTab] = useState<'general' | 'sync' | 'security' | 'currency' | 'logs' | 'extensions'>('general');
 
@@ -183,6 +189,69 @@ const handleSetupBiometric = async () => {
     { id: 'geek', name: '极客黑', color: 'bg-gray-800', icon: Terminal, desc: 'Dark & Coding' },
   ];
 
+// 新建自定义 API
+const handleAddAPI = () => {
+    const newAPI = {
+        id: crypto.randomUUID(),
+        name: "未命名自动化任务",
+        trigger: 'interval',
+        intervalSeconds: 60,
+        code: "// 在此编写代码\n// 使用 GSM.db.update(id, { ... }) 更新数据\nGSM.sys.log('定时任务正在运行...');",
+        enabled: true
+    };
+    onUpdateAPIs(prev => [...prev, newAPI]);
+};
+
+// 切换 API 状态 (开启/关闭)
+const handleToggleAPI = (id: string) => {
+    onUpdateAPIs(prev => prev.map(api => 
+        api.id === id ? { ...api, enabled: !api.enabled } : api
+    ));
+};
+
+// 删除 API
+const handleDeleteAPI = (id: string) => {
+    if(confirm("确定删除此 API 函数吗？")) {
+        onUpdateAPIs(prev => prev.filter(api => api.id !== id));
+    }
+};
+
+// 记录当前正在编辑的 API 对象（如果为 null 则显示列表，不为 null 则显示编辑器）
+const [editingApi, setEditingApi] = useState<any | null>(null);
+
+// 保存编辑后的 API
+const handleSaveApiContent = () => {
+    if (!editingApi) return;
+    onUpdateAPIs(prev => prev.map(api => 
+        api.id === editingApi.id ? editingApi : api
+    ));
+    setEditingApi(null); // 返回列表
+};
+
+// 新建自定义主题
+const handleAddTheme = () => {
+    const id = "custom-" + Date.now();
+    const newTheme = {
+        id: id,
+        name: "新主题 " + (customThemes.length + 1),
+        colors: {
+            primary: "#6366f1",     // 默认靛蓝
+            background: "#ffffff",  // 默认白
+            text: "#1f2937",        // 默认灰
+            panel: "#f9fafb"        // 默认浅灰背景
+        },
+        css: "/* 在此输入高级 CSS 覆盖 */"
+    };
+    onUpdateThemes(prev => [...prev, newTheme]);
+};
+
+// 删除主题
+const handleDeleteTheme = (id: string) => {
+    if(confirm("确定删除此主题吗？")) {
+        onUpdateThemes(prev => prev.filter(t => t.id !== id));
+    }
+};
+
   // --- Final Save Handler ---
   const handleSave = () => {
     // 组装并保存
@@ -293,12 +362,68 @@ const handleSetupBiometric = async () => {
   </div>
 )}
 
-        
-        {/* ================= EXTENSIONS TAB ================= */}
-
+{/* ================= EXTENSIONS TAB ================= */}
 {activeTab === 'extensions' && (
   <div className="space-y-6 animate-fade-in">
     
+    {/* 如果 editingApi 有值，显示编辑器；否则显示原有的监控和列表 */}
+    {editingApi ? (
+      <div className="flex flex-col gap-4 bg-gray-900 p-4 rounded-xl border border-gray-700 animate-fade-in">
+        <div className="flex justify-between items-center border-b border-gray-800 pb-2">
+            <h3 className="text-green-400 font-mono text-sm flex items-center gap-2">
+                <Terminal className="w-4 h-4"/> 正在编辑: {editingApi.name}
+            </h3>
+            <button onClick={() => setEditingApi(null)} className="text-gray-500 hover:text-white text-xs">取消</button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+            <div>
+                <label className="text-[10px] text-gray-500 uppercase font-bold">函数名称</label>
+                <input 
+                    type="text" 
+                    value={editingApi.name} 
+                    onChange={e => setEditingApi({...editingApi, name: e.target.value})}
+                    className="w-full bg-gray-800 border-gray-700 text-white text-xs rounded p-2 outline-none focus:border-green-500"
+                />
+            </div>
+            <div>
+                <label className="text-[10px] text-gray-500 uppercase font-bold">执行间隔 (秒)</label>
+                <input 
+                    type="number" 
+                    value={editingApi.intervalSeconds} 
+                    onChange={e => setEditingApi({...editingApi, intervalSeconds: Number(e.target.value)})}
+                    className="w-full bg-gray-800 border-gray-700 text-white text-xs rounded p-2 outline-none focus:border-green-500"
+                />
+            </div>
+        </div>
+
+        <div>
+            <label className="text-[10px] text-gray-500 uppercase font-bold block mb-1">JavaScript 源码 (GSM 内核 API 可用)</label>
+            <textarea 
+                value={editingApi.code}
+                onChange={e => setEditingApi({...editingApi, code: e.target.value})}
+                spellCheck={false}
+                className="w-full h-64 bg-black border border-gray-800 text-green-500 font-mono text-[11px] p-3 rounded outline-none focus:ring-1 focus:ring-green-900 resize-none shadow-inner"
+            />
+        </div>
+
+        <div className="flex justify-end gap-3">
+            <button 
+                onClick={() => setEditingApi(null)}
+                className="px-4 py-2 text-xs text-gray-400 hover:text-white transition-colors"
+            >
+                丢弃更改
+            </button>
+            <button 
+                onClick={handleSaveApiContent}
+                className="px-6 py-2 bg-green-600 text-white text-xs font-bold rounded hover:bg-green-500 shadow-lg shadow-green-900/20"
+            >
+                保存并载入内存
+            </button>
+        </div>
+      </div>
+    ) : (
+      <>
     {/* Debug Mode Controller */}
     <div className="bg-gray-900 text-green-400 p-4 rounded-xl border border-gray-700 font-mono text-xs">
         <div className="flex justify-between items-center mb-2">
@@ -341,26 +466,43 @@ const handleSetupBiometric = async () => {
             ))}
         </div>
     </div>
-
-    {/* User APIs Editor */}
-    <div className="border border-gray-200 rounded-xl p-4">
-        <div className="flex justify-between items-center mb-3">
-            <h3 className="font-bold text-gray-700">用户自定义 API</h3>
-            <button onClick={() => {/* 添加 API 的逻辑 */}} className="text-xs bg-indigo-50 text-indigo-600 px-2 py-1 rounded">+ 新建函数</button>
-        </div>
-        <div className="space-y-2 max-h-40 overflow-y-auto">
-            {userAPIs.map(api => (
-                <div key={api.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                    <div className="flex items-center gap-2">
-                        <input type="checkbox" checked={api.enabled} onChange={() => {/* Toggle Logic */}} />
-                        <span className="text-sm font-medium">{api.name}</span>
-                        <span className="text-[9px] bg-gray-200 px-1 rounded">{api.trigger}</span>
+    
+        {/* User APIs Editor 列表 */}
+        <div className="border border-gray-200 rounded-xl p-4 bg-white shadow-sm">
+            <div className="flex justify-between items-center mb-3">
+                <h3 className="font-bold text-gray-700">用户自定义 API</h3>
+                <button onClick={handleAddAPI} className="text-xs bg-indigo-50 text-indigo-600 px-2 py-1 rounded">+ 新建函数</button>
+            </div>
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+                {userAPIs.map(api => (
+                    <div key={api.id} className="flex items-center justify-between bg-gray-50 p-3 rounded border border-gray-100 hover:border-indigo-200 transition-all">
+                        <div className="flex items-center gap-3">
+                            <input 
+                                type="checkbox" 
+                                checked={api.enabled} 
+                                onChange={() => handleToggleAPI(api.id)} 
+                                className="w-4 h-4 accent-indigo-600"
+                            />
+                            <div className="flex flex-col">
+                                <span className="text-sm font-bold text-gray-800">{api.name}</span>
+                                <span className="text-[10px] text-gray-400 font-mono uppercase tracking-tighter">
+                                    Trigger: {api.trigger} | Every {api.intervalSeconds}s
+                                </span>
+                            </div>
+                        </div>
+                        <div className="flex gap-3">
+                            <button 
+                                onClick={() => setEditingApi(api)} // 核心：点击进入编辑模式
+                                className="text-xs text-indigo-600 font-bold hover:underline"
+                            >
+                                编辑代码
+                            </button>
+                            <button onClick={() => handleDeleteAPI(api.id)} className="text-xs text-red-400 hover:text-red-600">删除</button>
+                        </div>
                     </div>
-                    <button className="text-xs text-blue-500">编辑代码</button>
-                </div>
-            ))}
+                ))}
+            </div>
         </div>
-    </div>
 
     {/* Custom Theme Editor */}
     <div className="border border-gray-200 rounded-xl p-4">

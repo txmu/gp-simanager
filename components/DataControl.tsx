@@ -71,7 +71,9 @@ const DataControl: React.FC<DataControlProps> = ({ currentData, onImport }) => {
             subscriptions: json.subscriptions || [],
             eSimChips: json.eSimChips || [],
             scripts: json.scripts || [],
-            chartWidgets: json.chartWidgets || []
+            chartWidgets: json.chartWidgets || [],
+            customThemes: json.customThemes || [],
+            userAPIs: json.userAPIs || []
           };
         }
         

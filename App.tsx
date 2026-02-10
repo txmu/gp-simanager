@@ -397,6 +397,8 @@ const App: React.FC = () => {
         if (data.globalIO) setGlobalIO(data.globalIO);
         if (data.notificationSettings) setNotificationSettings(data.notificationSettings);
         if (data.hasReadGuide !== undefined) setHasReadGuide(data.hasReadGuide);
+        if (data.customThemes) setCustomThemes(data.customThemes);
+        if (data.userAPIs) setUserAPIs(data.userAPIs);
         
         // v4 Load
         if (data.securitySettings) {
@@ -418,8 +420,7 @@ const App: React.FC = () => {
     // Attempt to register a dummy service worker
     if ('serviceWorker' in navigator) {
         // Create a simple SW blob on the fly or register a file
-        // For this demo, we assume vite-plugin-pwa or manual file exists, 
-        // OR we inject the manifest link here if missing
+        // For this demo, manual file exists, 
         let link = document.querySelector("link[rel~='manifest']");
         if (!link) {
           link = document.createElement('link');
@@ -447,7 +448,8 @@ const App: React.FC = () => {
         version: 3, 
         appTitle, theme, isDemoMode, hasReadGuide, 
         notificationSettings, securitySettings, syncSettings, currencySettings,
-        subscriptions, eSimChips, scripts, chartWidgets, globalIO 
+        subscriptions, eSimChips, scripts, chartWidgets, globalIO, customThemes, 
+        userAPIs 
     };
     localStorage.setItem('sim-manager-data-v3', JSON.stringify(data));
 
@@ -485,7 +487,7 @@ const App: React.FC = () => {
     
       }
     }
-  }, [appTitle, theme, isDemoMode, hasReadGuide, notificationSettings, securitySettings, syncSettings, currencySettings, subscriptions, eSimChips, scripts, chartWidgets, globalIO, hasCheckedLock]);
+  }, [appTitle, theme, isDemoMode, hasReadGuide, notificationSettings, securitySettings, syncSettings, currencySettings, subscriptions, eSimChips, scripts, chartWidgets, globalIO, hasCheckedLock, customThemes, userAPIs]);
   
   useEffect(() => {
     // 条件判断：
@@ -994,6 +996,12 @@ const App: React.FC = () => {
           syncSettings={syncSettings}
           currencySettings={currencySettings}
           isDemoMode={isDemoMode}
+          isLocalHost={isLocalHost}
+          systemTasks={systemTasks}
+          userAPIs={userAPIs}               // 传递数据
+          onUpdateAPIs={setUserAPIs}        // 传递修改函数
+          customThemes={customThemes}       // 传递数据
+          onUpdateThemes={setCustomThemes}  // 传递修改函数
           onSave={(newTitle, newTheme, newNotifs, newDemoMode, newSecurity, newSync, newCurrency) => {
             setAppTitle(newTitle);
             setTheme(newTheme);
