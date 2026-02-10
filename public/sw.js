@@ -1,9 +1,9 @@
 /**
  * 全球通套餐管家 - 手动 Service Worker
- * VERSION: v4.5
+ * VERSION: v5.0
  */
 
-const VERSION = 'v4.5';
+const VERSION = 'v5.0';
 const CACHE_NAME = `sim-manager-cache-${VERSION}`;
 
 // 核心静态资源缓存列表

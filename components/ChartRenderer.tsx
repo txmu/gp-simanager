@@ -59,7 +59,7 @@ const ChartRenderer: React.FC<ChartRendererProps> = ({ type, title, data, height
     return (
       <div className="h-full flex items-end gap-2 pt-4 pb-6 px-2 overflow-x-auto">
         {data.values.map((val, i) => (
-          <div key={i} className="flex-1 min-w-[30px] flex flex-col items-center group relative">
+          <div key={i} className="flex-1 min-w-[30px] h-full flex flex-col justify-end items-center group relative">
             <div 
               className="w-full bg-indigo-500 rounded-t hover:bg-indigo-400 transition-all relative"
               style={{ height: `${(val / max) * 100}%`, backgroundColor: colors[i % colors.length] }}
