@@ -519,8 +519,10 @@ const handleDeleteTheme = (id: string) => {
             ))}
         </div>
     </div>
-  </div>
-)}
+    </> // 这里必须用 </> 闭合之前的 <>
+    )} 
+  </div> // 这里闭合 activeTab === 'extensions' 下的那个最外层 div
+)} 
           
           {/* ================= GENERAL TAB ================= */}
           {activeTab === 'general' && (
