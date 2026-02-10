@@ -33,6 +33,8 @@ interface SettingsModalProps {
   onLog: (msg: string) => void;        
   onClearLogs: () => void;             
   isLocalHost: boolean;
+  forceDebug: boolean;              
+  onToggleDebug: (val: boolean) => void; 
   systemTasks: any[];
   userAPIs: any[];
   onUpdateAPIs: React.Dispatch<React.SetStateAction<any[]>>;
@@ -41,7 +43,7 @@ interface SettingsModalProps {
 }
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ 
-    currentTitle, currentTheme, notificationSettings, isDemoMode, securitySettings, syncSettings, currencySettings, logs, isLocalHost, systemTasks, userAPIs, customThemes,
+    currentTitle, currentTheme, notificationSettings, isDemoMode, securitySettings, syncSettings, currencySettings, logs, isLocalHost, forceDebug, onToggleDebug, systemTasks, userAPIs, customThemes,
     onUpdateThemes, onLog, onSave, onExportICS, onExportCSV, onClearLogs, onClose 
 }) => {
   const [activeTab, setActiveTab] = useState<'general' | 'sync' | 'security' | 'currency' | 'logs' | 'extensions'>('general');
@@ -438,7 +440,7 @@ const handleDeleteTheme = (id: string) => {
             ) : (
                 <label className="flex items-center gap-2 cursor-pointer">
                     <span>{forceDebug ? 'ENABLED' : 'DISABLED'}</span>
-                    <input type="checkbox" checked={forceDebug} onChange={e => setForceDebug(e.target.checked)} className="accent-green-500" />
+                    <input type="checkbox" checked={forceDebug} onChange={e => onToggleDebug(e.target.checked)} className="accent-green-500" />
                 </label>
             )}
         </div>

@@ -997,6 +997,8 @@ const App: React.FC = () => {
           currencySettings={currencySettings}
           isDemoMode={isDemoMode}
           isLocalHost={isLocalHost}
+          forceDebug={forceDebug}           // 传递变量
+          onToggleDebug={setForceDebug}     // 传递修改函数
           systemTasks={systemTasks}
           userAPIs={userAPIs}               // 传递数据
           onUpdateAPIs={setUserAPIs}        // 传递修改函数
