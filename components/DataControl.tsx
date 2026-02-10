@@ -74,15 +74,19 @@ const DataControl: React.FC<DataControlProps> = ({ currentData, onImport }) => {
             chartWidgets: json.chartWidgets || []
           };
         }
-
+        
         const confirmMsg = `检测到备份包含:\n` +
           `- 标题: ${importedData.appTitle}\n` +
-          `- 主题: ${importedData.theme}\n` +
           `- ${importedData.subscriptions.length} 个套餐\n` +
-          `- ${importedData.eSimChips.length} 个芯片\n` +
-          `请选择导入方式:`;
+          `- ${importedData.eSimChips.length} 个芯片\n`;
           
-        if (window.confirm(`${confirmMsg}\n点击“确定”覆盖当前数据 (Replace)。\n点击“取消”尝试合并 (Merge)。`)) {
+        // 🟢 第一步：询问是否要导入（这里点取消就是真取消）
+        if (!window.confirm(`${confirmMsg}\n是否确认导入该文件的数据？`)) {
+           return; // 用户点了取消，直接中断，不进行任何操作
+        }
+
+        // 🟢 第二步：如果确定要导入，再询问导入方式
+        if (window.confirm(`请选择导入方式：\n\n【确定】：覆盖 (清空现有数据，完全替换)\n【取消】：合并 (保留现有数据，仅追加新套餐)`)) {
            onImport(importedData, 'replace');
            setImportStats('已覆盖数据');
         } else {
