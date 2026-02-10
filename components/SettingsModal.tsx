@@ -5,7 +5,7 @@ import {
   Lock, Eye, EyeOff, Shield, ShieldCheck, RefreshCw, Key, 
   Database, Coins, FileSpreadsheet, CloudLightning, Fingerprint, SmartphoneNfc, Terminal, Cpu
 } from 'lucide-react';
-import { ThemeType, NotificationSettings, SecuritySettings, SyncSettings, CurrencySettings } from '../types';
+import { ThemeType, NotificationSettings, SecuritySettings, SyncSettings, CurrencySettings, UserAPI, CustomTheme, SystemTask } from '../types';
 import { ALL_CURRENCIES } from '../constants';
 import { webdavClient, securityHelper, fetchExchangeRates, webAuthnHelper } from '../utils/helpers';
 
@@ -44,7 +44,7 @@ interface SettingsModalProps {
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ 
     currentTitle, currentTheme, notificationSettings, isDemoMode, securitySettings, syncSettings, currencySettings, logs, isLocalHost, forceDebug, onToggleDebug, systemTasks, userAPIs, customThemes,
-    onUpdateThemes, onLog, onSave, onExportICS, onExportCSV, onClearLogs, onClose 
+    onUpdateAPIs, onUpdateThemes, onLog, onSave, onExportICS, onExportCSV, onClearLogs, onClose 
 }) => {
   const [activeTab, setActiveTab] = useState<'general' | 'sync' | 'security' | 'currency' | 'logs' | 'extensions'>('general');
 
