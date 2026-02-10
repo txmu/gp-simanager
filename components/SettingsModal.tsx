@@ -232,19 +232,29 @@ const handleSaveApiContent = () => {
 
 // 新建自定义主题
 const handleAddTheme = () => {
+    // 1. 添加这行日志，用来测试按钮点击是否生效
+    console.log("🚀 新建主题按钮被点击了！当前主题数:", customThemes.length);
+
     const id = "custom-" + Date.now();
     const newTheme = {
         id: id,
         name: "新主题 " + (customThemes.length + 1),
         colors: {
-            primary: "#6366f1",     // 默认靛蓝
-            background: "#ffffff",  // 默认白
-            text: "#1f2937",        // 默认灰
-            panel: "#f9fafb"        // 默认浅灰背景
+            primary: "#6366f1",    // 默认靛蓝
+            background: "#ffffff", // 默认白
+            text: "#1f2937",       // 默认黑
+            panel: "#f9fafb"       // 默认浅灰
         },
-        css: "/* 在此输入高级 CSS 覆盖 */"
+        css: "/* 在此输入高级 CSS */"
     };
-    onUpdateThemes(prev => [...prev, newTheme]);
+
+    // 2. 确保使用的是传进来的 onUpdateThemes
+    if (typeof onUpdateThemes === 'function') {
+        onUpdateThemes(prev => [...prev, newTheme]);
+        console.log("✅ 已发送更新指令给父组件");
+    } else {
+        console.error("❌ 报错：onUpdateThemes 不是一个合法的函数！");
+    }
 };
 
 // 删除主题
@@ -510,7 +520,7 @@ const handleDeleteTheme = (id: string) => {
     <div className="border border-gray-200 rounded-xl p-4">
         <div className="flex justify-between items-center mb-3">
             <h3 className="font-bold text-gray-700">UI 主题工坊</h3>
-            <button onClick={() => {/* 添加主题逻辑 */}} className="text-xs bg-pink-50 text-pink-600 px-2 py-1 rounded">+ 新建主题</button>
+            <button onClick={handleAddTheme} className="text-xs bg-pink-50 text-pink-600 px-2 py-1 rounded">+ 新建主题</button>
         </div>
         <div className="grid grid-cols-2 gap-2">
             {customThemes.map(t => (
