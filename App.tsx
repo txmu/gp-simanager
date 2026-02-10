@@ -85,6 +85,23 @@ const App: React.FC = () => {
   const [filterTag, setFilterTag] = useState<string>('all'); 
   const [filterExpression, setFilterExpression] = useState(''); 
   const [sortBy, setSortBy] = useState<'expiry' | 'cost' | 'priority' | 'nickname'>('expiry');
+  
+  useEffect(() => {
+    // 只有在本地开发环境，或者 URL 里带有特殊指令时才挂载
+    const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const isSecretMode = new URLSearchParams(window.location.search).get('debug') === 'true';
+
+    if (isDev || isSecretMode) {
+        (window as any)["_x7b21_"] = {
+            update: setSubscriptions,
+            list: () => console.table(subscriptions),
+            raw: subscriptions
+        };
+        console.log("🛠️ CLI 模式已激活");
+    }
+
+    return () => { delete (window as any)["_x7b21_"]; };
+  }, [subscriptions]); // 这里的依赖项确保 subscriptions 永远是最新的
 
   // Initialization
   useEffect(() => {
