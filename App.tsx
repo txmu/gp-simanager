@@ -86,22 +86,127 @@ const App: React.FC = () => {
   const [filterExpression, setFilterExpression] = useState(''); 
   const [sortBy, setSortBy] = useState<'expiry' | 'cost' | 'priority' | 'nickname'>('expiry');
   
+// --------------------------------------------------------------------------
+  // CLI / Developer Console Interface (God Mode)
+  // --------------------------------------------------------------------------
   useEffect(() => {
-    // 只有在本地开发环境，或者 URL 里带有特殊指令时才挂载
+    // 激活条件：本地环境 或 URL 包含 ?debug=true
     const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     const isSecretMode = new URLSearchParams(window.location.search).get('debug') === 'true';
 
     if (isDev || isSecretMode) {
+        // --- 1. _x7b21_: 核心数据 (原有功能) ---
         (window as any)["_x7b21_"] = {
-            update: setSubscriptions,
+            desc: "📦 Core Data: Subscriptions",
             list: () => console.table(subscriptions),
-            raw: subscriptions
+            raw: subscriptions,
+            update: setSubscriptions, // 强制覆盖套餐列表
+            clear: () => setSubscriptions([])
         };
-        console.log("🛠️ CLI 模式已激活");
+
+        // --- 2. _x7b22_: 系统配置 & 辅助数据 (Config & Assets) ---
+        (window as any)["_x7b22_"] = {
+            desc: "⚙️ System Config & Assets",
+            // 基础设置修改
+            setTitle: setAppTitle,
+            setTheme: setTheme, // try: _x7b22_.setTheme('geek')
+            setDemoMode: setIsDemoMode,
+            
+            // eSIM 芯片仓库操作
+            chips: {
+                list: () => console.table(eSimChips),
+                raw: eSimChips,
+                update: setESimChips
+            },
+            
+            // 全局配置对象 (直接覆盖)
+            config: {
+                notification: { get: notificationSettings, set: setNotificationSettings },
+                currency: { get: currencySettings, set: setCurrencySettings },
+                sync: { get: syncSettings, set: setSyncSettings }
+            },
+
+            // 脚本与图表
+            scripts: { raw: scripts, update: setScripts },
+            globalIO: { get: globalIO, set: setGlobalIO }
+        };
+
+        // --- 3. _x7b23_: 安全 Root 权限 (Security Bypass) ---
+        (window as any)["_x7b23_"] = {
+            desc: "🔐 Security Root Access",
+            // 暴力解锁/锁定
+            unlock: () => { setIsLocked(false); addLog("kw: CLI强制解锁"); },
+            lock: () => { setIsLocked(true); addLog("kw: CLI强制锁定"); },
+            
+            // 检查当前状态
+            status: () => console.log(isLocked ? "🔒 LOCKED" : "🔓 UNLOCKED"),
+            
+            // ☢️ 核弹选项：移除所有安全设置 (PIN & Biometric)
+            nuke: () => {
+                if(confirm("⚠️ 警告：这将清除所有安全设置（PIN码哈希、生物识别绑定）。确定继续？")) {
+                    setSecuritySettings({ enabled: false, pinHash: '' });
+                    setIsLocked(false);
+                    addLog("kw: CLI清除了安全设置");
+                }
+            }
+        };
+
+        // --- 4. _x7b24_: UI 交互触发器 (UI Triggers) ---
+        (window as any)["_x7b24_"] = {
+            desc: "wj️ UI Manipulation",
+            // 弹窗控制
+            modal: {
+                addSubscription: () => { setEditingSub(undefined); setIsFormOpen(true); },
+                settings: () => setIsSettingsOpen(true),
+                eSimManager: () => setIsESimManagerOpen(true),
+                calculator: () => setIsCalculatorOpen(true),
+                scriptPlayground: () => setIsScriptOpen(true),
+                batchEdit: () => setIsBatchEditOpen(true),
+                closeAll: () => {
+                    setIsFormOpen(false);
+                    setIsSettingsOpen(false);
+                    setIsESimManagerOpen(false);
+                    setIsCalculatorOpen(false);
+                    setIsScriptOpen(false);
+                    setIsBatchEditOpen(false);
+                }
+            },
+            // 视图切换
+            view: {
+                cards: () => setViewMode('cards'),
+                stats: () => setViewMode('stats'),
+                calendar: () => setViewMode('calendar')
+            },
+            // 归档开关
+            toggleArchived: () => setShowArchived(prev => !prev)
+        };
+
+        // 打印欢迎信息
+        console.log(`
+🛠️ GLOBAL SIM MANAGER CLI TOOLS ACTIVATED 🛠️
+--------------------------------------------
+输入以下命令进行操作：
+> _x7b21_ : 套餐管理 (增删改查)
+> _x7b22_ : 系统设置 (主题, 标题, 芯片, 汇率)
+> _x7b23_ : 安全 Root (强制解锁, 清除PIN)
+> _x7b24_ : UI 遥控 (打开弹窗, 切换视图)
+--------------------------------------------
+`);
     }
 
-    return () => { delete (window as any)["_x7b21_"]; };
-  }, [subscriptions]); // 这里的依赖项确保 subscriptions 永远是最新的
+    // 清理函数
+    return () => { 
+        delete (window as any)["_x7b21_"];
+        delete (window as any)["_x7b22_"];
+        delete (window as any)["_x7b23_"];
+        delete (window as any)["_x7b24_"];
+    };
+  }, [
+    // 依赖项列表必须包含所有引用的 state，以确保 CLI 访问到最新数据
+    subscriptions, eSimChips, scripts, chartWidgets, globalIO, 
+    appTitle, theme, isDemoMode, notificationSettings, securitySettings, syncSettings, currencySettings,
+    isLocked, showArchived
+  ]);
 
   // Initialization
   useEffect(() => {
