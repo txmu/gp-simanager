@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Plus, Search, Edit, Trash2, Calculator, Cpu, Code, LayoutDashboard, Archive, Settings, BarChart3, List, Filter, Terminal, XCircle, EyeOff, Calendar as CalendarIcon, Grid, Tag, Signal, AlertCircle } from 'lucide-react';
 import { Subscription, ESimChip, SavedScript, AppData, ChartWidget, ThemeType, OperatorType, GlobalIO, NotificationSettings, SecuritySettings, SyncSettings, CurrencySettings } from './types';
 import SubscriptionForm from './components/SubscriptionForm';
@@ -86,8 +86,181 @@ const App: React.FC = () => {
   const [filterExpression, setFilterExpression] = useState(''); 
   const [sortBy, setSortBy] = useState<'expiry' | 'cost' | 'priority' | 'nickname'>('expiry');
   
+  // === v6 OS Kernel Extension: User Space & Scheduler ===
+  
+  // 1. 新增状态定义
+  const [customThemes, setCustomThemes] = useState<CustomTheme[]>([]);
+  const [userAPIs, setUserAPIs] = useState<UserAPI[]>([]);
+  const [systemTasks, setSystemTasks] = useState<SystemTask[]>([]);
+  const [forceDebug, setForceDebug] = useState(false); // 本地部署强制开启，远程可选
+  
+  // 用于记录 API 上次运行的时间戳 (不触发渲染)
+  const apiExecutionHistory = React.useRef<Record<string, number>>({});
+
+  // 2. 环境检测与调试模式守卫
+  const isLocalHost = useMemo(() => 
+    ['localhost', '127.0.0.1'].includes(window.location.hostname), 
+  []);
+  
+  // 实际生效的调试状态 (本地强制开启，非本地看设置且需非演示模式)
+  const effectiveDebugMode = isLocalHost ? true : (isDemoMode ? false : forceDebug);
+
+  // 3. 显式系统调用接口 (Public Kernel Calls) - 供油猴/外部调用
+  useEffect(() => {
+    // 只有在调试模式有效时才暴露完整接口，否则只暴露只读版本或隐藏
+    if (effectiveDebugMode) {
+        (window as any).GSM = {
+          version: "5.0.0-OS",
+          // 数据层 (Database Layer)
+          db: {
+            read: () => subscriptions,
+            write: (subs: Subscription[]) => setSubscriptions(subs),
+            // 原子化更新单个订阅
+            update: (id: string, patch: Partial<Subscription>) => {
+               setSubscriptions(prev => prev.map(s => s.id === id ? {...s, ...patch} : s));
+               addLog(`🤖 API 更新了套餐: ${id.slice(0,4)}...`);
+            },
+            // 获取全局 IO
+            io: {
+                get: () => globalIO,
+                set: (io: GlobalIO) => setGlobalIO(io)
+            }
+          },
+          // 系统层 (System Layer)
+          sys: {
+            log: (msg: string) => addLog(`🔔 [EXT]: ${msg}`),
+            unlock: () => setIsLocked(false),
+            lock: () => setIsLocked(true),
+            // 注册并立即执行一个临时任务 (即发即弃)
+            exec: (name: string, func: Function) => {
+               const pid = Date.now();
+               // 注册进程
+               setSystemTasks(prev => [...prev, { 
+                   pid, 
+                   name: `[EXT] ${name}`, 
+                   status: 'running', 
+                   lastRun: new Date().toISOString(), 
+                   memoryUsage: 0, 
+                   logs: [] 
+               }]);
+               
+               try { 
+                   func(); 
+                   addLog(`✅ 外部任务 [${name}] 执行完毕`);
+               } catch(e: any) { 
+                   console.error(e);
+                   addLog(`XY 外部任务 [${name}] 异常: ${e.message}`);
+               }
+               
+               // 5秒后自动回收进程记录
+               setTimeout(() => setSystemTasks(prev => prev.filter(t => t.pid !== pid)), 5000); 
+            }
+          }
+        };
+
+        if (!window['GSM_LH_K']) {
+            console.log("%c 🚀 GSM OS Kernel Loaded. Access via window.GSM", "background: #222; color: #bada55; font-size:12px; padding: 4px; border-radius: 4px;");
+            window['GSM_LH_K'] = true; 
+        }
+    } else {
+        // 非调试模式，清理接口防止滥用
+        delete (window as any).GSM;
+    }
+  }, [subscriptions, globalIO, effectiveDebugMode]);
+
+  // 4. MMU (Micro-Task Management Unit) - 精确任务调度器
+  useEffect(() => {
+    if (!userAPIs.length) return;
+
+    // 每秒进行一次调度检查
+    const scheduler = setInterval(() => {
+      const now = Date.now();
+      
+      userAPIs.forEach(api => {
+        // 4.1 基础条件检查
+        if (!api.enabled || api.trigger !== 'interval' || !api.intervalSeconds || api.intervalSeconds <= 0) return;
+        
+        // 4.2 精确时间差计算
+        const lastRun = apiExecutionHistory.current[api.id] || 0;
+        const elapsed = now - lastRun;
+        const intervalMs = api.intervalSeconds * 1000;
+        
+        // 4.3 触发执行
+        if (elapsed >= intervalMs) {
+           // 更新执行时间戳 (立即更新防止重入)
+           apiExecutionHistory.current[api.id] = now;
+
+           // 创建进程记录 (PCB)
+           const pid = now + Math.floor(Math.random() * 1000);
+           setSystemTasks(prev => {
+              // 简单的内存管理：保留最近 15 个任务记录
+              const cleanup = prev.length > 15 ? prev.slice(prev.length - 15) : prev;
+              return [...cleanup, { 
+                  pid, 
+                  name: api.name, 
+                  status: 'running', 
+                  lastRun: new Date().toISOString(), 
+                  memoryUsage: api.code.length, 
+                  logs: [] 
+              }];
+           });
+
+           // 执行沙箱代码
+           try {
+              // 注入 GSM 接口和 Global IO
+              const sandbox = new Function('GSM', 'io', 'console', api.code);
+              sandbox((window as any).GSM, globalIO, console);
+              
+              // 任务成功反馈
+              addLog(`⚙️ [MMU] 自动任务 [${api.name}] 执行成功`);
+              setSystemTasks(prev => prev.map(t => t.pid === pid ? { ...t, status: 'idle' } : t));
+           } catch (e: any) {
+              // 任务失败反馈
+              addLog(`XY [MMU] 任务 [${api.name}] 崩溃: ${e.message}`);
+              setSystemTasks(prev => prev.map(t => t.pid === pid ? { ...t, status: 'error' } : t));
+           }
+        }
+      });
+    }, 1000); // 1Hz 心跳
+
+    return () => clearInterval(scheduler);
+  }, [userAPIs, globalIO]);
+
+  // 5. 动态主题注入引擎 (Dynamic Theme Engine)
+  useEffect(() => {
+    const styleId = 'gsm-custom-theme-style';
+    let styleEl = document.getElementById(styleId);
+    
+    // 查找当前选中的主题是否为用户自定义主题
+    const customTheme = customThemes.find(t => t.id === theme);
+    
+    if (customTheme) {
+        if (!styleEl) {
+            styleEl = document.createElement('style');
+            styleEl.id = styleId;
+            document.head.appendChild(styleEl);
+        }
+        // 注入 CSS 变量覆盖与自定义样式
+        styleEl.innerHTML = `
+            :root { --theme-primary: ${customTheme.colors.primary}; }
+            body.theme-${customTheme.id} {
+                background-color: ${customTheme.colors.background} !important;
+                color: ${customTheme.colors.text} !important;
+            }
+            body.theme-${customTheme.id} .bg-white {
+                background-color: ${customTheme.colors.panel} !important;
+            }
+            /* 用户高级 CSS */
+            ${customTheme.css || ''}
+        `;
+    } else if (styleEl) {
+        // 如果切回内置主题，清空自定义样式
+        styleEl.innerHTML = '';
+    }
+  }, [theme, customThemes]);
+  
 // --------------------------------------------------------------------------
-  // CLI / Developer Console Interface (God Mode)
+  // v5; CLI / Developer Console Interface (God Mode)
   // --------------------------------------------------------------------------
   useEffect(() => {
     // 激活条件：本地环境 或 URL 包含 ?debug=true

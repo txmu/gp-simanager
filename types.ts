@@ -268,6 +268,39 @@ export interface GlobalIO {
   output: string;
 }
 
+// 1. 用户自定义主题结构
+export interface CustomTheme {
+  id: string;
+  name: string;
+  colors: {
+    primary: string;    // 主色调 (Tailwind bg-indigo-600)
+    background: string; // 背景色
+    text: string;       // 主要文字颜色
+    panel: string;      // 卡片背景
+  };
+  css?: string;         // 高级自定义 CSS
+}
+
+// 2. 用户自定义 API (Serverless Function)
+export interface UserAPI {
+  id: string;
+  name: string;
+  trigger: 'manual' | 'interval' | 'event'; // 触发方式
+  intervalSeconds?: number; // 如果是定时任务
+  code: string; // JS 代码体
+  enabled: boolean;
+}
+
+// 3. 任务/进程控制块 (PCB for MMU)
+export interface SystemTask {
+  pid: number;
+  name: string;
+  status: 'running' | 'idle' | 'error';
+  lastRun: string;
+  memoryUsage: number; // 模拟内存占用 (chars count)
+  logs: string[];
+}
+
 export interface NotificationSettings {
   enabled: boolean;
   useTriggers: boolean; // Experimental Notification Triggers API
@@ -319,6 +352,10 @@ export interface AppData {
   scripts: SavedScript[];
   chartWidgets?: ChartWidget[];
   globalIO?: GlobalIO; // Persist IO state
+  
+  // v6 New
+  customThemes?: CustomTheme[];
+  userAPIs?: UserAPI[];
 }
 
 export interface Stats {

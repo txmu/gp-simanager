@@ -299,32 +299,37 @@ export const generateBatchICS = (subscriptions: Subscription[]) => {
 
 // WebDAV Client
 export const webdavClient = {
-    async put(url: string, username: string, pass: string, data: string) {
+    // 增加 ETag 支持，实现乐观锁
+    async put(url: string, username: string, pass: string, data: string, etag?: string) {
         const headers = new Headers();
         headers.set('Authorization', 'Basic ' + btoa(username + ":" + pass));
         headers.set('Content-Type', 'application/json');
+        if (etag) headers.set('If-Match', etag); // 防止覆盖
         
-        const response = await fetch(url, {
-            method: 'PUT',
-            headers: headers,
-            body: data
-        });
-        
-        if (!response.ok) throw new Error(`WebDAV Upload Failed: ${response.statusText}`);
-        return response;
+        // 简单的重试逻辑
+        for (let i = 0; i < 3; i++) {
+            try {
+                const response = await fetch(url, { method: 'PUT', headers, body: data });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return response;
+            } catch (e) {
+                if (i === 2) throw e;
+                await new Promise(r => setTimeout(r, 1000)); // 等待1秒重试
+            }
+        }
     },
     
-    async get(url: string, username: string, pass: string) {
+    // 获取内容同时也获取 ETag
+    async getWithMeta(url: string, username: string, pass: string) {
         const headers = new Headers();
         headers.set('Authorization', 'Basic ' + btoa(username + ":" + pass));
         
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: headers
-        });
-
-        if (!response.ok) throw new Error(`WebDAV Download Failed: ${response.statusText}`);
-        return await response.text();
+        const response = await fetch(url, { method: 'GET', headers });
+        if (!response.ok) throw new Error(`Download Failed: ${response.statusText}`);
+        
+        const text = await response.text();
+        const etag = response.headers.get('ETag');
+        return { data: text, etag: etag ? etag.replace(/['"]/g, '') : null };
     }
 };
 

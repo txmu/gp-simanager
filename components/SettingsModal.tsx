@@ -3,7 +3,7 @@ import {
   X, Check, Monitor, Flower, Snowflake, Terminal, Leaf, Palette, 
   Bell, Calendar, Zap, AlertTriangle, Download, Send, Globe, 
   Lock, Eye, EyeOff, Shield, ShieldCheck, RefreshCw, Key, 
-  Database, Coins, FileSpreadsheet, CloudLightning, Fingerprint, SmartphoneNfc, Terminal
+  Database, Coins, FileSpreadsheet, CloudLightning, Fingerprint, SmartphoneNfc, Terminal, Cpu
 } from 'lucide-react';
 import { ThemeType, NotificationSettings, SecuritySettings, SyncSettings, CurrencySettings } from '../types';
 import { ALL_CURRENCIES } from '../constants';
@@ -38,7 +38,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     currentTitle, currentTheme, notificationSettings, isDemoMode, securitySettings, syncSettings, currencySettings, logs,
     onLog, onSave, onExportICS, onExportCSV, onClearLogs, onClose 
 }) => {
-  const [activeTab, setActiveTab] = useState<'general' | 'sync' | 'security' | 'currency' | 'logs'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'sync' | 'security' | 'currency' | 'logs' | 'extensions'>('general');
 
   // --- 1. General Settings State ---
   const [title, setTitle] = useState(currentTitle);
@@ -207,7 +207,7 @@ const handleSetupBiometric = async () => {
 
         {/* Tabs */}
         <div className="flex border-b border-gray-200">
-           {['general', 'security', 'sync', 'currency', 'logs'].map(tab => (
+           {['general', 'security', 'sync', 'currency', 'logs', 'extensions'].map(tab => (
                <button 
                  key={tab}
                  onClick={() => setActiveTab(tab as any)} 
@@ -222,6 +222,7 @@ const handleSetupBiometric = async () => {
  tab === 'sync' ? '同步' : 
  tab === 'currency' ? '汇率' : 
  tab === 'logs' ? '日志' : 
+ tab === 'extensions' ? '扩展内核' : 
  ''}
                </button>
            ))}
@@ -289,6 +290,93 @@ const handleSetupBiometric = async () => {
     <p className="text-[10px] text-gray-400 text-center italic">
       提示：此日志仅在当前浏览器会话中有效，刷新页面后将重置。
     </p>
+  </div>
+)}
+
+        
+        {/* ================= EXTENSIONS TAB ================= */}
+
+{activeTab === 'extensions' && (
+  <div className="space-y-6 animate-fade-in">
+    
+    {/* Debug Mode Controller */}
+    <div className="bg-gray-900 text-green-400 p-4 rounded-xl border border-gray-700 font-mono text-xs">
+        <div className="flex justify-between items-center mb-2">
+            <h3 className="font-bold text-sm flex items-center gap-2">
+                <Terminal className="w-4 h-4"/> ROOT / DEBUG 模式
+            </h3>
+            {/* 开关逻辑 */}
+            {isLocalHost ? (
+                <span className="bg-gray-800 text-gray-500 px-2 py-1 rounded border border-gray-600 cursor-not-allowed" title="本地部署强制开启">
+                    🔒 LOCKED ON (LOCAL)
+                </span>
+            ) : (
+                <label className="flex items-center gap-2 cursor-pointer">
+                    <span>{forceDebug ? 'ENABLED' : 'DISABLED'}</span>
+                    <input type="checkbox" checked={forceDebug} onChange={e => setForceDebug(e.target.checked)} className="accent-green-500" />
+                </label>
+            )}
+        </div>
+        <div className="opacity-80 leading-relaxed">
+            <p>启用后，将暴露 window._x7b... 系列底层接口。</p>
+            <p className="mt-2 text-white font-bold border-t border-gray-700 pt-2">🐒 油猴脚本集成指南 (Tampermonkey):</p>
+            <p>在脚本头添加: <code className="bg-gray-800 px-1">@grant GM_xmlhttpRequest</code></p>
+            <p>数据读取: <code className="bg-gray-800 px-1">window.GSM.db.read()</code></p>
+            <p>数据写入: <code className="bg-gray-800 px-1">window.GSM.db.update(id, payload)</code></p>
+        </div>
+    </div>
+
+    {/* MMU Task Monitor */}
+    <div className="border border-gray-200 rounded-xl p-4">
+        <h3 className="font-bold text-gray-700 mb-3 flex items-center gap-2"><Cpu className="w-4 h-4"/> 任务管理器 (MMU)</h3>
+        <div className="bg-gray-50 rounded h-32 overflow-y-auto p-2 text-[10px] font-mono">
+            {systemTasks.length === 0 && <span className="text-gray-400">系统空闲 (System Idle)...</span>}
+            {systemTasks.map(t => (
+                <div key={t.pid} className="flex justify-between border-b border-gray-100 last:border-0 py-1">
+                    <span className="text-indigo-600">PID:{t.pid}</span>
+                    <span className="font-bold">{t.name}</span>
+                    <span className={t.status==='running'?'text-green-500':'text-gray-500'}>{t.status.toUpperCase()}</span>
+                    <span>{t.memoryUsage}B</span>
+                </div>
+            ))}
+        </div>
+    </div>
+
+    {/* User APIs Editor */}
+    <div className="border border-gray-200 rounded-xl p-4">
+        <div className="flex justify-between items-center mb-3">
+            <h3 className="font-bold text-gray-700">用户自定义 API</h3>
+            <button onClick={() => {/* 添加 API 的逻辑 */}} className="text-xs bg-indigo-50 text-indigo-600 px-2 py-1 rounded">+ 新建函数</button>
+        </div>
+        <div className="space-y-2 max-h-40 overflow-y-auto">
+            {userAPIs.map(api => (
+                <div key={api.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                    <div className="flex items-center gap-2">
+                        <input type="checkbox" checked={api.enabled} onChange={() => {/* Toggle Logic */}} />
+                        <span className="text-sm font-medium">{api.name}</span>
+                        <span className="text-[9px] bg-gray-200 px-1 rounded">{api.trigger}</span>
+                    </div>
+                    <button className="text-xs text-blue-500">编辑代码</button>
+                </div>
+            ))}
+        </div>
+    </div>
+
+    {/* Custom Theme Editor */}
+    <div className="border border-gray-200 rounded-xl p-4">
+        <div className="flex justify-between items-center mb-3">
+            <h3 className="font-bold text-gray-700">UI 主题工坊</h3>
+            <button onClick={() => {/* 添加主题逻辑 */}} className="text-xs bg-pink-50 text-pink-600 px-2 py-1 rounded">+ 新建主题</button>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+            {customThemes.map(t => (
+                <div key={t.id} className="p-2 border rounded flex items-center gap-2 text-xs" style={{background: t.colors.background, color: t.colors.text}}>
+                    <div className="w-4 h-4 rounded-full" style={{background: t.colors.primary}}></div>
+                    {t.name}
+                </div>
+            ))}
+        </div>
+    </div>
   </div>
 )}
           
